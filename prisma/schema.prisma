@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  GRAB       @map("grab")
+  LINE_MAN   @map("line-man")
+  SHOPEEFOOD @map("shopeefood")
+}
+
+enum ReceiptStatus {
+  PROCESSING @map("processing")
+  VERIFIED   @map("verified")
+}
+
+model MemberProfile {
+  memberKey    String             @id @map("member_key")
+  email        String?            @map("email")
+  name         String?            @map("name")
+  rewardPoints Int                @default(0) @map("reward_points")
+  favorites    MemberFavorite[]
+  alerts       MemberPriceAlert[]
+  receipts     MemberReceipt[]
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("member_profiles")
+}
+
+model MemberFavorite {
+  memberKey  String        @map("member_key")
+  scenarioId String        @map("scenario_id")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  member     MemberProfile @relation(fields: [memberKey], references: [memberKey], onDelete: Cascade)
+
+  @@id([memberKey, scenarioId])
+  @@index([memberKey])
+  @@map("member_favorites")
+}
+
+model MemberPriceAlert {
+  id          String        @id
+  memberKey   String        @map("member_key")
+  scenarioId  String        @map("scenario_id")
+  platform    Platform
+  targetPrice Int           @map("target_price")
+  enabled     Boolean       @default(true)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  member      MemberProfile @relation(fields: [memberKey], references: [memberKey], onDelete: Cascade)
+
+  @@index([memberKey])
+  @@map("member_price_alerts")
+}
+
+model MemberReceipt {
+  id            String        @id
+  memberKey     String        @map("member_key")
+  fileName      String        @map("file_name")
+  scenarioId    String        @map("scenario_id")
+  platform      Platform
+  restaurant    String
+  itemName      String        @map("item_name")
+  district      String
+  totalPrice    Int           @map("total_price")
+  createdAt     DateTime      @map("created_at")
+  verifiedAt    DateTime?     @map("verified_at")
+  status        ReceiptStatus
+  pointsAwarded Int           @default(0) @map("points_awarded")
+  member        MemberProfile @relation(fields: [memberKey], references: [memberKey], onDelete: Cascade)
+
+  @@index([memberKey, createdAt(sort: Desc)])
+  @@map("member_receipts")
+}
+
+model CompareScenario {
+  id         String         @id
+  title      String
+  restaurant String
+  district   String
+  distanceKm Float          @map("distance_km")
+  rating     Float
+  cuisine    String
+  summary    String
+  tags       Json
+  offers     ScenarioOffer[]
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  @@index([district])
+  @@map("compare_scenarios")
+}
+
+model ScenarioOffer {
+  scenarioId  String          @map("scenario_id")
+  platform    Platform
+  totalPrice  Int             @map("total_price")
+  foodPrice   Int             @map("food_price")
+  deliveryFee Int             @map("delivery_fee")
+  serviceFee  Int             @map("service_fee")
+  discount    Int
+  etaMinutes  Int             @map("eta_minutes")
+  note        String
+  scenario    CompareScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@id([scenarioId, platform])
+  @@map("scenario_offers")
+}
