@@ -86,7 +86,7 @@ export function AuthNavActions({
             : "bg-[#111111] text-white"
         }`}
       >
-        Become a member
+        Member
       </Link>
     </div>
   );
