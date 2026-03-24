@@ -18,7 +18,7 @@ export const useHomeStore = create<HomeStore>()(
       ...createPersistenceSlice(...store),
     }),
     {
-      name: "mr-have-food-home-store-v2",
+      name: "mr-have-food-home-store-v3",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeSection: state.activeSection,

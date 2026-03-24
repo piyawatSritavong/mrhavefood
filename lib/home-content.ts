@@ -1,7 +1,8 @@
 export type SectionId =
-  | "vision"
-  | "compare"
-  | "heatmap";
+  | "main"
+  | "order"
+  | "live-deals"
+  | "worth-it";
 
 export type PlatformKey = "grab" | "line-man" | "shopeefood";
 
@@ -36,16 +37,17 @@ export type CompareScenario = {
 };
 
 export const navItems = [
-  { label: "Vision", href: "#vision", section: "vision" },
-  { label: "Compare", href: "#compare", section: "compare" },
-  { label: "Heatmap", href: "#heatmap", section: "heatmap" },
+  { label: "Main", href: "#main", section: "main" },
+  { label: "Order", href: "#order", section: "order" },
+  { label: "Live Deals", href: "#live-deals", section: "live-deals" },
+  { label: "Worth It", href: "#worth-it", section: "worth-it" },
 ] as const;
 
 export const heroStats = [
-  { value: "3 apps", label: "Meta compare in one view" },
-  { value: "AI + Receipt", label: "Net price verification loop" },
-  { value: "3D map", label: "Worth-it heatmap by district" },
-  { value: "4 phases", label: "SEO to retention roadmap" },
+  { value: "Mr.AI", label: "Personal assistant for food decisions" },
+  { value: "3 apps", label: "Compare Grab, LINE MAN, ShopeeFood" },
+  { value: "Live deals", label: "Savings signals from real user behavior" },
+  { value: "Worth it", label: "Map and route view for value-first eating" },
 ];
 
 export const comparisonApps = [
@@ -56,7 +58,7 @@ export const comparisonApps = [
     delivery: "24 min",
     note: "ETA เร็วสุด",
     tone: "bg-emerald-100/80 text-emerald-900",
-    href: "#roadmap",
+    href: "/compare",
     cta: "Go to Grab",
     valueCopy: "ส่งไวที่สุด เหมาะกับช่วงรีบ",
   },
@@ -67,7 +69,7 @@ export const comparisonApps = [
     delivery: "31 min",
     note: "คุ้มที่สุดวันนี้",
     tone: "bg-lime-100/80 text-lime-900",
-    href: "#roadmap",
+    href: "/compare",
     cta: "Go to LINE MAN",
     valueCopy: "รวมค่าส่งและโปรแล้ว net ต่ำสุด",
   },
@@ -78,7 +80,7 @@ export const comparisonApps = [
     delivery: "28 min",
     note: "โค้ดส่งฟรีพร้อมใช้",
     tone: "bg-orange-100/85 text-orange-900",
-    href: "#roadmap",
+    href: "/compare",
     cta: "Go to ShopeeFood",
     valueCopy: "เหมาะกับคนมีโค้ดและ free-delivery",
   },

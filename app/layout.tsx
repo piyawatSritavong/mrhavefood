@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata, Viewport } from "next";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { getAuthSession } from "@/lib/auth";
 import "./globals.css";
 
@@ -49,8 +50,20 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#f6f0e1",
-  colorScheme: "light",
+  colorScheme: "light dark",
 };
+
+const themeBootScript = `
+(() => {
+  try {
+    const storedTheme = window.localStorage.getItem("mr-have-food-theme");
+    const theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : "light";
+    document.documentElement.dataset.theme = theme;
+  } catch (error) {
+    document.documentElement.dataset.theme = "light";
+  }
+})();
+`;
 
 export default async function RootLayout({
   children,
@@ -60,8 +73,14 @@ export default async function RootLayout({
   const session = await getAuthSession();
 
   return (
-    <html lang="th" className="scroll-smooth">
+    <html
+      lang="th"
+      className="scroll-smooth"
+      data-theme="light"
+      suppressHydrationWarning
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -70,7 +89,10 @@ export default async function RootLayout({
         />
       </head>
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <AuthSessionProvider session={session}>{children}</AuthSessionProvider>
+        <AuthSessionProvider session={session}>
+          {children}
+          <ThemeToggle />
+        </AuthSessionProvider>
       </body>
     </html>
   );

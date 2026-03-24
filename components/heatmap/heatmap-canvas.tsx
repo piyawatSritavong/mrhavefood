@@ -47,9 +47,6 @@ export function HeatmapCanvas({
             referrerPolicy="no-referrer-when-downgrade"
             className="block h-[28rem] w-full border-0 bg-white"
           />
-          <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-[#111111] px-4 py-2 text-xs text-white shadow-[0_18px_45px_rgba(17,17,17,0.18)]">
-            จุดที่คุ้มที่สุดในลาดพร้าวตอนนี้
-          </div>
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
