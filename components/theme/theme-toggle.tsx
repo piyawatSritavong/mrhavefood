@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { MoonIcon, SunIcon } from "@/components/ui/icons";
 
 type ThemeMode = "light" | "dark";
 
@@ -21,6 +22,40 @@ function readThemeMode(): ThemeMode {
 function applyThemeMode(nextTheme: ThemeMode) {
   document.documentElement.dataset.theme = nextTheme;
   window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+}
+
+export function NavThemeButton() {
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => readThemeMode());
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  const handleToggle = () => {
+    const nextTheme = themeMode === "dark" ? "light" : "dark";
+    setThemeMode(nextTheme);
+    applyThemeMode(nextTheme);
+  };
+
+  if (!mounted) {
+    return <div className="size-9" />;
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={handleToggle}
+      className="grid size-9 place-items-center rounded-full bg-[#f0f4f8] text-[#45627a] transition-colors hover:bg-[#edf4fb] hover:text-(--brand-primary)"
+    >
+      {themeMode === "dark"
+        ? <SunIcon className="size-4" />
+        : <MoonIcon className="size-4" />
+      }
+    </button>
+  );
 }
 
 export function ThemeToggle() {

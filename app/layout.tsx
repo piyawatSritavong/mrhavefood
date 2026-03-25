@@ -1,8 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata, Viewport } from "next";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { getAuthSession } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -65,13 +63,11 @@ const themeBootScript = `
 })();
 `;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getAuthSession();
-
   return (
     <html
       lang="th"
@@ -89,9 +85,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <AuthSessionProvider session={session}>
+        <AuthSessionProvider>
           {children}
-          <ThemeToggle />
         </AuthSessionProvider>
       </body>
     </html>

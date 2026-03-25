@@ -1,57 +1,38 @@
-import { HomeLiveDealsSection } from "@/components/home/home-live-deals-section";
-import { HomeMainSection } from "@/components/home/home-main-section";
-import { HomeOrderSection } from "@/components/home/home-order-section";
+import { HomeCategoriesSection } from "@/components/home/home-categories-section";
+import { HomeDiscoverSection } from "@/components/home/home-discover-section";
+import { HomeFooterSection } from "@/components/home/home-footer-section";
+import { HomeHeroSection } from "@/components/home/home-hero-section";
 import { HomeShell } from "@/components/home/home-shell";
-import { HomeWorthItSection } from "@/components/home/home-worth-it-section";
-import type { CompareScenario } from "@/lib/home-content";
 import {
-  buildLiveDealItems,
-  buildOutboundOrderStats,
-  getFeaturedWorthScenario,
-} from "@/lib/home-view-models";
-import { buildPersonalizedRoutePlan } from "@/lib/route-engine";
+  getFilteredCategorySections,
+  type HomeQuickFilterId,
+  type HomeZoneId,
+} from "@/lib/home-experience";
 
 type HomePageProps = {
-  scenarios: CompareScenario[];
+  activeQuickFilter: HomeQuickFilterId;
+  selectedZoneId: HomeZoneId;
 };
 
 export function HomePage({
-  scenarios,
+  activeQuickFilter,
+  selectedZoneId,
 }: HomePageProps) {
-  if (!scenarios.length) {
-    return null;
-  }
-
-  const podiumOrderStats = buildOutboundOrderStats(scenarios);
-  const liveDealItems = buildLiveDealItems(scenarios);
-  const routePlan = buildPersonalizedRoutePlan({
-    favoriteScenarioIds: [],
-    priceAlerts: [],
-    scenarios,
-  });
-  const featuredWorthScenario = getFeaturedWorthScenario(scenarios);
-
-  if (!featuredWorthScenario) {
-    return null;
-  }
+  const sections = getFilteredCategorySections(selectedZoneId, activeQuickFilter);
 
   return (
     <HomeShell>
-      <HomeMainSection scenarios={scenarios} />
-      <HomeOrderSection
-        podiumOrderStats={podiumOrderStats}
-        scenarios={scenarios}
+      <HomeHeroSection selectedZoneId={selectedZoneId} />
+      <HomeDiscoverSection
+        activeQuickFilter={activeQuickFilter}
+        selectedZoneId={selectedZoneId}
       />
-      <HomeLiveDealsSection
-        liveDealItems={liveDealItems}
-        scenarios={scenarios}
+      <HomeCategoriesSection
+        activeQuickFilter={activeQuickFilter}
+        sections={sections}
+        selectedZoneId={selectedZoneId}
       />
-      <HomeWorthItSection
-        featuredScenario={featuredWorthScenario.scenario}
-        featuredScenarioOffer={featuredWorthScenario.offer}
-        routePlan={routePlan}
-        worthItIndex={featuredWorthScenario.worthItIndex}
-      />
+      <HomeFooterSection />
     </HomeShell>
   );
 }

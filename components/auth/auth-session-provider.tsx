@@ -7,7 +7,7 @@ import { MemberStateBridge } from "@/components/auth/member-state-bridge";
 
 type AuthSessionProviderProps = {
   children: React.ReactNode;
-  session: Session | null;
+  session?: Session | null;
 };
 
 export function AuthSessionProvider({

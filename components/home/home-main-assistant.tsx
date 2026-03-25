@@ -21,6 +21,7 @@ import { cn } from "@/lib/cn";
 import { useHomeStore } from "@/lib/stores/use-home-store";
 
 type HeroChatMessage = {
+  createdAt: string;
   deal?: HeroChatDeal;
   id: string;
   insight?: string;
@@ -39,6 +40,14 @@ function findScenarioById(scenarios: CompareScenario[], scenarioId: string) {
   return scenarios.find((scenario) => scenario.id === scenarioId);
 }
 
+function formatHeroChatTimestamp(date = new Date()) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 export function HomeMainAssistant({
   scenarios,
 }: HomeMainAssistantProps) {
@@ -49,6 +58,7 @@ export function HomeMainAssistant({
   const [heroChatInput, setHeroChatInput] = useState("");
   const [heroMessages, setHeroMessages] = useState<HeroChatMessage[]>([
     {
+      createdAt: formatHeroChatTimestamp(),
       id: "hero-assistant-intro",
       insight: "ทางลัด เพื่อให้ฉันหาข้อมูลได้เร็วขึ้น",
       role: "assistant",
@@ -110,10 +120,11 @@ export function HomeMainAssistant({
     setSelectedPlatform(reply.bestOfferPlatform);
     setHeroMessages((current) => [
       ...current,
-      {
-        id: `hero-user-${Date.now()}`,
-        role: "user" as const,
-        text: trimmedPrompt,
+        {
+          createdAt: formatHeroChatTimestamp(),
+          id: `hero-user-${Date.now()}`,
+          role: "user" as const,
+          text: trimmedPrompt,
       },
     ].slice(-5));
     setHeroLoaderSteps(reply.loaderSteps);
@@ -136,6 +147,7 @@ export function HomeMainAssistant({
         setHeroMessages((current) => [
           ...current,
           {
+            createdAt: formatHeroChatTimestamp(),
             deal: reply.deal,
             id: `hero-assistant-${Date.now()}`,
             insight: reply.insight,
@@ -159,154 +171,181 @@ export function HomeMainAssistant({
           ref={heroThreadRef}
           className="hero-chat-thread"
         >
+          <div className="hero-chat-day-divider" aria-hidden="true">
+            Today
+          </div>
           {heroMessages.map((message) => {
             const highestPrice = message.offers
               ? Math.max(...message.offers.map((offer) => offer.totalPrice))
               : 0;
+            const isRichMessage = Boolean(
+              message.offers || message.stats || message.insight || message.deal,
+            );
 
             return (
               <article
                 key={message.id}
                 className={cn(
                   "hero-chat-message",
+                  isRichMessage && "is-rich",
                   message.role === "user" ? "is-user" : "is-assistant",
                 )}
               >
-                <div className="hero-chat-bubble">
-                  <p className="type-body text-current text-center">{message.text}</p>
+                <div
+                  className={cn(
+                    "hero-chat-bubble",
+                    isRichMessage && "is-rich",
+                    message.showPromptStarters && "is-intro",
+                  )}
+                >
+                  <div className="hero-chat-body">
+                    <p className="type-body text-current">{message.text}</p>
 
-                  {message.offers ? (
-                    <div className="hero-offer-board">
-                      {message.offers.map((offer) => (
-                        <div
-                          key={`${message.id}-${offer.platform}`}
-                          className={cn(
-                            "hero-offer-card",
-                            offer.isBest && "is-best",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="type-heading-sm text-[#111111]">
-                                {offer.name}
-                              </p>
-                              <p className="type-caption mt-1 text-[#5f695c]">
-                                {offer.note}
+                    {message.offers ? (
+                      <div className="hero-offer-board">
+                        {message.offers.map((offer) => (
+                          <div
+                            key={`${message.id}-${offer.platform}`}
+                            className={cn(
+                              "hero-offer-card",
+                              offer.isBest && "is-best",
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="type-heading-sm text-[#111111]">
+                                  {offer.name}
+                                </p>
+                                <p className="type-caption mt-1 text-[#5f695c]">
+                                  {offer.note}
+                                </p>
+                              </div>
+                              <p className="type-heading-md type-price text-[#111111]">
+                                {formatBaht(offer.totalPrice)}
                               </p>
                             </div>
-                            <p className="type-heading-md type-price text-[#111111]">
-                              {formatBaht(offer.totalPrice)}
-                            </p>
-                          </div>
-                          <div className="hero-offer-bar-track mt-3">
-                            <span
-                              className={cn(
-                                "hero-offer-bar-fill",
-                                offer.isBest && "is-best",
-                              )}
-                              style={{
-                                width: `${Math.max(
-                                  34,
-                                  Math.round((highestPrice / offer.totalPrice) * 100),
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {message.stats ? (
-                    <div className="hero-stat-grid">
-                      {message.stats.map((stat) => (
-                        <div
-                          key={`${message.id}-${stat.label}`}
-                          className={cn("hero-stat-card", `tone-${stat.tone}`)}
-                        >
-                          <span
-                            className={cn("hero-stat-glyph", `kind-${stat.kind}`)}
-                            aria-hidden="true"
-                          >
-                            <span />
-                            <span />
-                            <span />
-                          </span>
-                          <div>
-                            <p className="type-caption uppercase tracking-[0.14em] opacity-75">
-                              {stat.label}
-                            </p>
-                            <p className="type-stat-sm mt-1 text-current">
-                              {stat.value}
-                            </p>
-                            <p className="type-caption mt-1 opacity-75">
-                              {stat.helper}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {message.insight ? (
-                    <div className="hero-insight-card">
-                      <p className="type-body text-[#384538]">{message.insight}</p>
-                      {message.showPromptStarters ? (
-                        <div
-                          className="hero-starter-row is-insight"
-                          aria-label="Prompt starters"
-                        >
-                          {heroPromptStarters.map((starter) => (
-                            <HoverBorderGradient
-                              key={`${message.id}-${starter.id}`}
-                              onClick={() => runHeroAssistant(starter.prompt)}
-                              innerClassName="hero-starter-chip"
-                            >
+                            <div className="hero-offer-bar-track mt-3">
                               <span
                                 className={cn(
-                                  "hero-starter-icon",
-                                  `is-${starter.icon}`,
+                                  "hero-offer-bar-fill",
+                                  offer.isBest && "is-best",
                                 )}
-                                aria-hidden="true"
+                                style={{
+                                  width: `${Math.max(
+                                    34,
+                                    Math.round((highestPrice / offer.totalPrice) * 100),
+                                  )}%`,
+                                }}
                               />
-                              <span>{starter.label}</span>
-                            </HoverBorderGradient>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
-                  {message.deal ? (
-                    <TrackedDeepLinkButton
-                      platform={message.deal.platform}
-                      scenarioId={message.deal.scenarioId}
-                      surface="home"
-                      className="hero-deal-lock-button"
-                      wrapperClassName="hero-deal-lock-shell"
-                    >
-                      <span>{message.deal.cta}</span>
-                      <span className="hero-deal-lock-subcopy">
-                        {message.deal.savingsCopy}
-                      </span>
-                    </TrackedDeepLinkButton>
-                  ) : null}
+                    {message.stats ? (
+                      <div className="hero-stat-grid">
+                        {message.stats.map((stat) => (
+                          <div
+                            key={`${message.id}-${stat.label}`}
+                            className={cn("hero-stat-card", `tone-${stat.tone}`)}
+                          >
+                            <span
+                              className={cn("hero-stat-glyph", `kind-${stat.kind}`)}
+                              aria-hidden="true"
+                            >
+                              <span />
+                              <span />
+                              <span />
+                            </span>
+                            <div>
+                              <p className="type-caption opacity-75">{stat.label}</p>
+                              <p className="type-stat-sm mt-1 text-current">
+                                {stat.value}
+                              </p>
+                              <p className="type-caption mt-1 opacity-75">
+                                {stat.helper}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {message.insight ? (
+                      <div className="hero-insight-card">
+                        <p className="type-body text-[#384538]">{message.insight}</p>
+                        {message.showPromptStarters ? (
+                          <div
+                            className="hero-starter-row is-insight"
+                            aria-label="Prompt starters"
+                          >
+                            {heroPromptStarters.map((starter) => (
+                              <HoverBorderGradient
+                                key={`${message.id}-${starter.id}`}
+                                onClick={() => runHeroAssistant(starter.prompt)}
+                                innerClassName="hero-starter-chip"
+                              >
+                                <span
+                                  className={cn(
+                                    "hero-starter-icon",
+                                    `is-${starter.icon}`,
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span>{starter.label}</span>
+                              </HoverBorderGradient>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {message.deal ? (
+                      <TrackedDeepLinkButton
+                        platform={message.deal.platform}
+                        scenarioId={message.deal.scenarioId}
+                        surface="home"
+                        className="hero-deal-lock-button"
+                        wrapperClassName="hero-deal-lock-shell"
+                      >
+                        <span>{message.deal.cta}</span>
+                        <span className="hero-deal-lock-subcopy">
+                          {message.deal.savingsCopy}
+                        </span>
+                      </TrackedDeepLinkButton>
+                    ) : null}
+                  </div>
+
+                  <div className="hero-chat-meta">
+                    <span className="hero-chat-time">{message.createdAt}</span>
+                  </div>
                 </div>
               </article>
             );
           })}
 
           {isHeroThinking ? (
-            <article className="hero-chat-message is-assistant">
-              <div className="hero-chat-bubble">
-                <p className="type-body text-current">
-                  กำลังสแกนหาดีลที่ดีที่สุดให้คุณ...
-                </p>
-                <div className="mt-4">
-                  <MultiStepLoader
-                    steps={heroLoaderSteps}
-                    activeStep={heroLoaderStepIndex}
-                  />
+            <article className="hero-chat-message is-assistant is-rich is-typing">
+              <div className="hero-chat-bubble is-rich is-typing">
+                <div className="hero-chat-body">
+                  <div className="hero-typing-row" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <p className="type-body text-current">
+                    กำลังสแกนหาดีลที่ดีที่สุดให้คุณ...
+                  </p>
+                  <div className="mt-4">
+                    <MultiStepLoader
+                      steps={heroLoaderSteps}
+                      activeStep={heroLoaderStepIndex}
+                    />
+                  </div>
+                </div>
+                <div className="hero-chat-meta">
+                  <span className="hero-chat-time">{formatHeroChatTimestamp()}</span>
                 </div>
               </div>
             </article>

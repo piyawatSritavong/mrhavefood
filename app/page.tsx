@@ -1,8 +1,23 @@
+import { Suspense } from "react";
+
 import { HomePage } from "@/components/home-page";
-import { getAllCompareScenarios } from "@/lib/compare-data";
+import type { HomeQuickFilterId, HomeZoneId } from "@/lib/home-experience";
 
-export default async function Page() {
-  const scenarios = await getAllCompareScenarios();
+type PageProps = {
+  searchParams: Promise<{ zone?: string; filter?: string }>;
+};
 
-  return <HomePage scenarios={scenarios} />;
+export default async function Page({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const selectedZoneId = (params.zone ?? "all") as HomeZoneId;
+  const activeQuickFilter = (params.filter ?? "all") as HomeQuickFilterId;
+
+  return (
+    <Suspense>
+      <HomePage
+        activeQuickFilter={activeQuickFilter}
+        selectedZoneId={selectedZoneId}
+      />
+    </Suspense>
+  );
 }
