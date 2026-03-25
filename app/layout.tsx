@@ -6,8 +6,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://mrhavefood.com"),
   title: {
-    default: "MrHaveFood.com | Smart Layer for Savvy Eaters",
-    template: "%s | MrHaveFood.com",
+    default: "MrHaveFood",
+    template: "%s | MrHaveFood",
   },
   description:
     "MrHaveFood.com helps Thai food lovers compare delivery prices, verify truth with real receipts, and discover worth-it zones through a visual savings map.",
