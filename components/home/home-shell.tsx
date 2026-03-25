@@ -22,12 +22,11 @@ export function HomeShell({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (navItems.some((item) => item.section === activeSection)) {
-      return;
+    if (!navItems.some((item) => item.section === activeSection)) {
+      setActiveSection("main");
     }
-
-    setActiveSection("main");
-  }, [activeSection, setActiveSection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // initialise once on mount only
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -97,6 +96,8 @@ export function HomeShell({
     };
   }, [setActiveSection]);
 
+  const isHero = !["discover", "categories", "footer"].includes(activeSection as string);
+
   const handleNavClick = (
     event: MouseEvent<HTMLAnchorElement>,
     section: SectionId,
@@ -120,13 +121,23 @@ export function HomeShell({
   return (
     <div
       ref={scrollContainerRef}
-      className="h-dvh overflow-y-auto scroll-smooth scroll-pt-20 scroll-px-0 bg-(--brand-primary)"
+      className="relative h-dvh overflow-y-auto scroll-smooth scroll-pt-20 scroll-px-0"
+      style={{
+        backgroundImage: "url('/assets/banner.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
     >
       <header
         ref={headerRef}
         className="sticky top-0 z-40 px-4 py-4 sm:px-6 lg:px-8"
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full border border-white/60 bg-white/90 px-4 py-3 shadow-[0_12px_40px_rgba(0,67,124,0.12)] backdrop-blur">
+        <div className={cn(
+          "mx-auto flex max-w-7xl items-center justify-between gap-2 rounded-3xl border px-3 py-2 backdrop-blur-md transition-all duration-300 sm:gap-4 sm:px-4 sm:py-3",
+          isHero
+            ? "border-white/15 bg-white/10"
+            : "border-[#e3dddd] bg-white/95 shadow-[0_8px_30px_rgba(0,67,124,0.08)]",
+        )}>
           <a
             href="#main"
             onClick={(event) => handleNavClick(event, "main")}
@@ -135,11 +146,17 @@ export function HomeShell({
             <span className="grid size-10 place-items-center rounded-full bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-accent))] font-display text-sm font-bold text-white">
               MF
             </span>
-            <div className="min-w-0">
-              <p className="font-display text-base font-bold leading-none text-[var(--brand-primary)]">
+            <div className="hidden min-w-0 sm:block">
+              <p className={cn(
+                "font-display text-base font-bold leading-none transition-colors duration-300",
+                isHero ? "text-white" : "text-(--brand-primary)",
+              )}>
                 MrHaveFood.com
               </p>
-              <p className="mt-1 text-xs leading-none text-[#5b6d7d]">
+              <p className={cn(
+                "mt-1 text-xs leading-none transition-colors duration-300",
+                isHero ? "text-white/65" : "text-[#5b6d7d]",
+              )}>
                 Great promotions deals
               </p>
             </div>
@@ -154,8 +171,13 @@ export function HomeShell({
                     onClick={(event) => handleNavClick(event, item.section)}
                     aria-current={activeSection === item.section ? "page" : undefined}
                     className={cn(
-                      "rounded-full px-4 py-2 text-sm font-semibold text-[#45627a] transition-colors hover:bg-[#edf4fb] hover:text-[var(--brand-primary)]",
-                      activeSection === item.section && "bg-[#edf4fb] text-[var(--brand-primary)]",
+                      "rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-300",
+                      isHero
+                        ? "text-white! hover:bg-white/10"
+                        : "text-[#45627a] hover:bg-[#edf4fb] hover:text-(--brand-primary)",
+                      activeSection === item.section && (
+                        isHero ? "bg-white/15 text-white!" : "bg-[#edf4fb] text-(--brand-primary)"
+                      ),
                     )}
                   >
                     {item.label}

@@ -52,7 +52,7 @@ export function HomeFilterBar({
   };
 
   return (
-    <div className="sticky top-24 z-30 rounded-[28px] border border-[#e3dddd] bg-white/96 p-4 shadow-[0_16px_50px_rgba(0,67,124,0.1)] backdrop-blur">
+    <div className="rounded-[28px] border border-[#e3dddd] bg-white p-4 shadow-[0_16px_50px_rgba(0,67,124,0.1)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex shrink-0 items-center gap-2 text-base font-semibold text-(--brand-primary)">

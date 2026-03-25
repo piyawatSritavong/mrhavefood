@@ -446,7 +446,7 @@ export const homeCategorySections: HomeCategorySection[] = [
         zoneId: "lat-phrao",
         pixelLabel: "ทอด",
         coverAccent: "from-[#ffe0c5] via-[#fff6ed] to-white",
-        imageUrl: "https://images.pexels.com/photos/60616/pexels-photo-60616.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop",
+        imageUrl: "https://images.pexels.com/photos/1352270/pexels-photo-1352270.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop",
         keywords: ["ของกินเล่น", "ไก่ทอด", "ลาดพร้าว"],
         offers: createOffers({
           grab: { totalPrice: 138, originalPrice: 256, etaMinutes: 17, freeDelivery: true, discountPercent: 46, verified: true },

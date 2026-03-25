@@ -148,7 +148,7 @@ export function HomeHeroChat({
       <CardContent className="space-y-4">
         <div
           ref={threadRef}
-          className="grid max-h-[24rem] gap-4 overflow-y-auto pr-1"
+          className="grid max-h-64 gap-4 overflow-y-auto pr-1 sm:max-h-96"
         >
           {messages.map((message) => (
             <article

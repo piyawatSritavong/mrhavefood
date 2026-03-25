@@ -32,7 +32,7 @@ export function HomeHeroSection({
     <section
       id="main"
       data-section-id="main"
-      className="flex min-h-[calc(100dvh-5rem)] snap-start flex-col justify-center bg-(--brand-primary) px-4 py-16 text-white sm:px-6 lg:px-8"
+      className="flex min-h-[calc(100dvh-5rem)] sm:snap-start flex-col justify-center px-4 py-10 text-white sm:py-16 sm:px-6 lg:px-8"
     >
       <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
         <div className="space-y-6">
@@ -41,10 +41,10 @@ export function HomeHeroSection({
           </Badge>
 
           <div className="space-y-4">
-            <h1 className="font-display text-[2.5rem] leading-[1.04] tracking-tight sm:text-[3.4rem] lg:text-[4.35rem]">
+            <h1 className="font-display text-[1.9rem] leading-[1.1] tracking-tight sm:text-[3rem] sm:leading-[1.04] lg:text-[4.2rem]">
               ไม่ต้องสลับแอปให้วุ่นวาย โปรโมชั่นจากทุกแอปอยู่ที่นี่หมดแล้ว
             </h1>
-            <p className="max-w-xl text-base leading-8 text-white/78">
+            <p className="max-w-xl text-sm leading-7 text-white/78 sm:text-base sm:leading-8">
               MrHaveFood ยกระดับการสั่งอาหารให้ฉลาดกว่าเดิม ด้วยระบบ AI เปรียบเทียบราคาแบบ Real-time เจ้าแรกในไทย ที่ช่วยคุณประหยัดทั้งเงินและเวลา
             </p>
           </div>
@@ -59,10 +59,10 @@ export function HomeHeroSection({
                   className="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur"
                 >
                   <Icon className="size-5 text-white" />
-                  <p className="mt-4 font-display text-lg leading-6 text-white">
+                  <p className="mt-3 font-display text-base leading-6 text-white sm:mt-4 sm:text-lg">
                     {item.title}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-white/72">{item.copy}</p>
+                  <p className="mt-1.5 text-xs leading-5 text-white/72 sm:mt-2 sm:text-sm sm:leading-6">{item.copy}</p>
                 </div>
               );
             })}

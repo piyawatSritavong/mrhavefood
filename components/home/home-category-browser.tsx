@@ -51,7 +51,7 @@ export function HomeCategoryBrowser({
       </div>
 
       {sections.map((section) => (
-        <section key={section.id} id={section.id} className="snap-start space-y-5">
+        <section key={section.id} id={section.id} className="sm:snap-start space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-2">
               <Badge variant="outline" className="gap-1.5">
@@ -59,24 +59,24 @@ export function HomeCategoryBrowser({
                 {section.pixelLabel}
               </Badge>
               <div className="space-y-2">
-                <h3 className="font-display text-[1.7rem] leading-tight text-[var(--brand-primary)]">
+                <h3 className="font-display text-[1.4rem] leading-tight text-(--brand-primary) sm:text-[1.7rem]">
                   {section.title}
                 </h3>
-                <p className="max-w-2xl text-sm leading-7 text-[#5c6e7f]">
+                <p className="max-w-2xl text-xs leading-6 text-[#5c6e7f] sm:text-sm sm:leading-7">
                   {section.description}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:snap-none sm:overflow-visible sm:pb-0 xl:grid-cols-4">
             {section.items.map((item) => {
               const winningOffer = getWinningOffer(item);
               const platformMeta = getPlatformMeta(winningOffer.platform);
               const savings = winningOffer.originalPrice - winningOffer.totalPrice;
 
               return (
-                <Card key={item.id} className="overflow-hidden border-[#e2dddd]">
+                <Card key={item.id} className="w-[78vw] max-w-xs shrink-0 snap-start overflow-hidden border-[#e2dddd] sm:w-auto sm:max-w-none">
                   <div className="relative h-40 overflow-hidden">
                     <img
                       src={item.imageUrl}
@@ -99,7 +99,7 @@ export function HomeCategoryBrowser({
 
                   <CardContent className="space-y-5 p-5">
                     <div className="space-y-2">
-                      <h4 className="font-display text-[1.15rem] leading-[1.3] text-[var(--brand-primary)]">
+                      <h4 className="font-display text-[1rem] leading-[1.3] text-(--brand-primary) sm:text-[1.15rem]">
                         {item.menuName}
                       </h4>
                       <p className="text-sm leading-6 text-[#5c6e7f]">
@@ -113,7 +113,7 @@ export function HomeCategoryBrowser({
                           <p className="text-xs font-semibold uppercase text-[#8a98a7]">
                             ราคาถูกสุดตอนนี้
                           </p>
-                          <p className="mt-1 font-data text-[2rem] font-semibold leading-none text-[var(--brand-accent)]">
+                          <p className="mt-1 font-data text-[1.75rem] font-semibold leading-none text-(--brand-accent) sm:text-[2rem]">
                             {formatBaht(winningOffer.totalPrice)}
                           </p>
                         </div>

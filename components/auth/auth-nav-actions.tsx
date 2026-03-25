@@ -70,7 +70,7 @@ export function AuthNavActions({
     <div className="flex items-center gap-2">
       <Link
         href="/sign-in"
-        className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4 sm:py-2 sm:text-sm ${
           isDark
             ? "border border-white/12 bg-white/7 text-white hover:bg-white/12"
             : "bg-white/70 text-[#121517] hover:bg-white"
@@ -80,7 +80,7 @@ export function AuthNavActions({
       </Link>
       <Link
         href="/sign-in?callbackUrl=%2Fmember"
-        className={`rounded-full px-5 py-2.5 text-sm font-semibold ${
+        className={`rounded-full px-3 py-1.5 text-xs font-semibold sm:px-5 sm:py-2.5 sm:text-sm ${
           isDark
             ? "bg-white text-[#111111]"
             : "bg-[#111111] text-white"

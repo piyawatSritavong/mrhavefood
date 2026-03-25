@@ -21,16 +21,16 @@ export function HomeCategoriesSection({
     <section
       id="categories"
       data-section-id="categories"
-      className="snap-start bg-(--brand-surface) px-4 py-16 sm:px-6 lg:px-8"
+      className="sm:snap-start bg-(--brand-surface) px-4 py-10 sm:py-16 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl space-y-8">
         <div className="space-y-4">
           <Badge variant="outline">Mr. All Foods</Badge>
           <div className="space-y-3">
-            <h2 className="font-display text-[2rem] leading-tight text-[var(--brand-primary)] sm:text-[2.5rem]">
+            <h2 className="font-display text-[1.6rem] leading-tight text-(--brand-primary) sm:text-[2.1rem] lg:text-[2.5rem]">
               รวมที่สุดของทุกเมนู... คัดเฉพาะ 'โปรโมชั่น' ที่ราคาดีที่สุดมาให้คุณ
             </h2>
-            <p className="max-w-3xl text-base leading-8 text-[#5c6e7f]">
+            <p className="max-w-3xl text-sm leading-7 text-[#5c6e7f] sm:text-base sm:leading-8">
               เลิกเสียเวลา! ระบบจะ Auto-Filter เฉพาะแอปที่ให้ 'ราคาสุทธิ' ถูกที่สุดของเมนูนั้นๆ มาโชว์ มั่นใจได้ว่าทุกคลิกคือ ความคุ้มค่าจริง
             </p>
           </div>

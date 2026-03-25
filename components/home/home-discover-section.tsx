@@ -19,16 +19,16 @@ export function HomeDiscoverSection({
     <section
       id="discover"
       data-section-id="discover"
-      className="flex min-h-[calc(100dvh-5rem)] snap-start flex-col justify-center bg-(--brand-surface) px-4 py-16 sm:px-6 lg:px-8"
+      className="flex min-h-[calc(100dvh-5rem)] sm:snap-start flex-col justify-center bg-(--brand-surface) px-4 py-10 sm:py-16 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="space-y-4">
           <Badge variant="outline">Mr. Easy Search</Badge>
           <div className="space-y-3">
-            <h2 className="font-display text-[2rem] leading-tight text-[var(--brand-primary)] sm:text-[2.4rem]">
+            <h2 className="font-display text-[1.6rem] leading-tight text-(--brand-primary) sm:text-[2.1rem] lg:text-[2.4rem]">
               ค้นหาพื้นที่ของคุณ... เราจะคัดดีลสุดคุ้มมาเสิร์ฟทันที
             </h2>
-            <p className="max-w-3xl text-base leading-8 text-[#5c6e7f]">
+            <p className="max-w-3xl text-sm leading-7 text-[#5c6e7f] sm:text-base sm:leading-8">
               คุมทุกดีลได้อยู่หมัด ไม่ว่าคุณจะเลื่อนไปไหน ระบบ Smart Filter จะอัปเดตโปรโมชั่นให้แบบ Real-time
             </p>
           </div>
