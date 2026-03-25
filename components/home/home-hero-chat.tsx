@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
   ArrowRightIcon,
   MessageSquareIcon,
@@ -19,6 +21,7 @@ import {
   getPlatformMeta,
   getZoneLabel,
   homePromptStarters,
+  homeZones,
   type HomeZoneId,
   type HomeChatReply,
 } from "@/lib/home-experience";
@@ -39,6 +42,21 @@ type HomeHeroChatProps = {
 export function HomeHeroChat({
   selectedZoneId,
 }: HomeHeroChatProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const updateZone = (nextZoneId: HomeZoneId) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextZoneId === "all") {
+      params.delete("zone");
+    } else {
+      params.set("zone", nextZoneId);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<HeroMessage[]>([
     {
@@ -109,28 +127,29 @@ export function HomeHeroChat({
   };
 
   return (
-    <Card className="border-white/15 bg-white shadow-[0_26px_90px_rgba(0,0,0,0.12)]">
+    <Card className="border-white/10 bg-white/8 backdrop-blur sm:border-white/15 sm:bg-white sm:backdrop-blur-none sm:shadow-[0_26px_90px_rgba(0,0,0,0.12)]">
       <CardHeader className="gap-4 border-b border-[#edf0f3] pb-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-2">
-            <Badge variant="secondary" className="gap-1.5">
-              <SparklesIcon className="size-3.5" />
-              Mr AI
-            </Badge>
-            <CardTitle className="text-[1.25rem] text-[var(--brand-primary)]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            <CardTitle className="text-base text-white sm:truncate sm:text-(--brand-primary) sm:text-[1.25rem]">
               วันนี้กินอะไรดี? MrHaveFood จัดการให้
             </CardTitle>
           </div>
 
-          <div className="flex items-center gap-2 rounded-2xl bg-[#f7fafc] px-4 py-3">
-            <p className="text-xs font-medium text-[#6a7a89]">Current</p>
-            <p className="font-display text-base text-(--brand-primary)">
-              {getZoneLabel(selectedZoneId)}
-            </p>
-          </div>
+          <Select
+            value={selectedZoneId}
+            onChange={(e) => updateZone(e.target.value as HomeZoneId)}
+            className="shrink-0 font-display text-base text-(--brand-primary) sm:w-auto"
+          >
+            {homeZones.map((zone) => (
+              <option key={zone.id} value={zone.id}>
+                {zone.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden flex-wrap gap-2 sm:flex">
           {homePromptStarters.map((starter) => (
             <Button
               key={starter.id}
@@ -160,9 +179,9 @@ export function HomeHeroChat({
             >
               <div
                 className={cn(
-                  "max-w-[90%] rounded-[24px] px-4 py-3 sm:max-w-[78%]",
+                  "max-w-[90%] rounded-3xl px-4 py-3 sm:max-w-[78%]",
                   message.role === "user"
-                    ? "bg-[var(--brand-primary)] text-white"
+                    ? "bg-(--brand-primary) text-white"
                     : "bg-[#f7fafc] text-[#13324c]",
                 )}
               >
@@ -201,7 +220,7 @@ export function HomeHeroChat({
                                 </Badge>
                                 <Badge variant="accent">{result.accentLabel}</Badge>
                               </div>
-                              <p className="font-display text-lg text-[var(--brand-primary)]">
+                              <p className="font-display text-lg text-(--brand-primary)">
                                 {result.menuName}
                               </p>
                               <p className="text-sm leading-6 text-[#5c6e7f]">
@@ -211,7 +230,7 @@ export function HomeHeroChat({
                             </div>
 
                             <div className="text-right">
-                              <p className="font-data text-2xl font-semibold text-[var(--brand-accent)]">
+                              <p className="font-data text-2xl font-semibold text-(--brand-accent)">
                                 {formatBaht(result.totalPrice)}
                               </p>
                               <p className="mt-1 text-sm text-[#8a98a7] line-through">
@@ -228,7 +247,7 @@ export function HomeHeroChat({
 
                     <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#eef5fb] px-4 py-3">
                       <div>
-                        <p className="text-sm font-semibold text-[var(--brand-primary)]">
+                        <p className="text-sm font-semibold text-(--brand-primary)">
                           {message.reply.hint}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-[#617487]">
@@ -248,15 +267,15 @@ export function HomeHeroChat({
 
           {isThinking ? (
             <article className="flex justify-start">
-              <div className="max-w-[78%] rounded-[24px] bg-[#f7fafc] px-4 py-3 text-[#13324c]">
+              <div className="max-w-[78%] rounded-3xl bg-[#f7fafc] px-4 py-3 text-[#13324c]">
                 <div className="flex items-center gap-2 text-xs font-medium opacity-75">
                   <MessageSquareIcon className="size-3.5" />
                   Mr.AI
                 </div>
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-[var(--brand-primary)]/40 animate-pulse" />
-                  <span className="size-2 rounded-full bg-[var(--brand-primary)]/60 animate-pulse [animation-delay:120ms]" />
-                  <span className="size-2 rounded-full bg-[var(--brand-primary)]/80 animate-pulse [animation-delay:240ms]" />
+                  <span className="size-2 rounded-full bg-(--brand-primary)/40 animate-pulse" />
+                  <span className="size-2 rounded-full bg-(--brand-primary)/60 animate-pulse [animation-delay:120ms]" />
+                  <span className="size-2 rounded-full bg-(--brand-primary)/80 animate-pulse [animation-delay:240ms]" />
                 </div>
               </div>
             </article>

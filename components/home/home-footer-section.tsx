@@ -8,7 +8,7 @@ export function HomeFooterSection() {
     <footer
       id="footer"
       data-section-id="footer"
-      className="flex min-h-[calc(100dvh-5rem)] sm:snap-start flex-col justify-center border-t border-[#d9d3d3] bg-white px-4 py-10 sm:py-16 sm:px-6 lg:px-8"
+      className="flex w-full min-w-0 flex-col justify-center border-t border-[#d9d3d3] bg-white px-4 py-10 sm:min-h-[calc(100dvh-5rem)] sm:snap-start sm:px-6 sm:py-16 lg:px-8"
     >
       <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
         <div className="space-y-4">

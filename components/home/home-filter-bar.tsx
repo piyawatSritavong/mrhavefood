@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { CompassIcon, MapPinIcon, PercentIcon, TruckIcon } from "@/components/ui/icons";
+import { MapPinIcon } from "@/components/ui/icons";
 import { Select } from "@/components/ui/select";
 import {
   homeQuickFilters,
@@ -13,11 +13,13 @@ import {
 } from "@/lib/home-experience";
 import { cn } from "@/lib/utils";
 
-const quickFilterIcons = {
-  "near-me": CompassIcon,
-  "biggest-discounts": PercentIcon,
-  "free-delivery": TruckIcon,
-} as const;
+const platformColors: Record<Exclude<HomeQuickFilterId, "all">, string> = {
+  "grab": "#00B14F",
+  "line-man": "#00C300",
+  "shopeefood": "#EE4D2D",
+  "foodpanda": "#D70F64",
+  "robinhood": "#4A148C",
+};
 
 type HomeFilterBarProps = {
   activeQuickFilter: HomeQuickFilterId;
@@ -52,7 +54,7 @@ export function HomeFilterBar({
   };
 
   return (
-    <div className="rounded-[28px] border border-[#e3dddd] bg-white p-4 shadow-[0_16px_50px_rgba(0,67,124,0.1)]">
+    <div className="w-full min-w-0 overflow-hidden rounded-[28px] border border-[#e3dddd] bg-white p-4 shadow-[0_16px_50px_rgba(0,67,124,0.1)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex shrink-0 items-center gap-2 text-base font-semibold text-(--brand-primary)">
@@ -79,24 +81,28 @@ export function HomeFilterBar({
           <Button
             variant={activeQuickFilter === "all" ? "default" : "outline"}
             size="sm"
-            className={cn("rounded-full", activeQuickFilter === "all" && "shadow-none")}
+            className={cn("shrink-0 rounded-full", activeQuickFilter === "all" && "shadow-none")}
             onClick={() => updateParams(selectedZoneId, "all")}
           >
             ทั้งหมด
           </Button>
           {homeQuickFilters.map((filter) => {
-            const Icon = quickFilterIcons[filter.id];
             const isActive = activeQuickFilter === filter.id;
+            const color = platformColors[filter.id];
 
             return (
               <Button
                 key={filter.id}
-                variant={isActive ? "accent" : "outline"}
+                variant={isActive ? "default" : "outline"}
                 size="sm"
-                className="rounded-full"
+                className="shrink-0 rounded-full gap-1.5"
+                style={isActive ? { backgroundColor: color, borderColor: color } : {}}
                 onClick={() => updateParams(selectedZoneId, filter.id)}
               >
-                <Icon className="size-4" />
+                <span
+                  className="size-2 rounded-full shrink-0"
+                  style={{ backgroundColor: isActive ? "white" : color }}
+                />
                 {filter.label}
               </Button>
             );

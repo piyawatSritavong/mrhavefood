@@ -121,7 +121,7 @@ export function HomeShell({
   return (
     <div
       ref={scrollContainerRef}
-      className="relative h-dvh overflow-y-auto scroll-smooth scroll-pt-20 scroll-px-0"
+      className="relative h-dvh overflow-x-hidden overflow-y-auto scroll-smooth scroll-pt-20 scroll-px-0"
       style={{
         backgroundImage: "url('/assets/banner.png')",
         backgroundSize: "cover",

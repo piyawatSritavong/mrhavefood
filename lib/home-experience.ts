@@ -10,9 +10,11 @@ export type HomeZoneId =
 
 export type HomeQuickFilterId =
   | "all"
-  | "near-me"
-  | "biggest-discounts"
-  | "free-delivery";
+  | "grab"
+  | "line-man"
+  | "shopeefood"
+  | "foodpanda"
+  | "robinhood";
 
 export type HomePromptStarter = {
   id: string;
@@ -99,9 +101,11 @@ export const homeZones = [
 ] satisfies Array<{ id: HomeZoneId; label: string }>;
 
 export const homeQuickFilters = [
-  { id: "near-me", label: "ใกล้ฉัน" },
-  { id: "biggest-discounts", label: "ลดแรง 50%" },
-  { id: "free-delivery", label: "ส่งฟรี" },
+  { id: "grab", label: "GrabFood" },
+  { id: "line-man", label: "LINE MAN" },
+  { id: "shopeefood", label: "ShopeeFood" },
+  { id: "foodpanda", label: "Foodpanda" },
+  { id: "robinhood", label: "Robinhood" },
 ] satisfies Array<{ id: Exclude<HomeQuickFilterId, "all">; label: string }>;
 
 export const homePromptStarters: HomePromptStarter[] = [
@@ -579,48 +583,13 @@ export function getWinningOffer(item: HomeMenuItem) {
 }
 
 function matchesQuickFilter(item: HomeMenuItem, filterId: HomeQuickFilterId) {
+  if (filterId === "all") return true;
   const winningOffer = getWinningOffer(item);
-
-  if (filterId === "near-me" || filterId === "all") {
-    return true;
-  }
-
-  if (filterId === "free-delivery") {
-    return winningOffer.freeDelivery;
-  }
-
-  if (filterId === "biggest-discounts") {
-    return winningOffer.discountPercent >= 50;
-  }
-
-  return true;
+  return winningOffer.platform === filterId;
 }
 
-function sortItemsByFilter(items: HomeMenuItem[], filterId: HomeQuickFilterId) {
-  const sortedItems = [...items];
-
-  if (filterId === "near-me") {
-    return sortedItems.sort(
-      (itemA, itemB) => getWinningOffer(itemA).etaMinutes - getWinningOffer(itemB).etaMinutes,
-    );
-  }
-
-  if (filterId === "biggest-discounts") {
-    return sortedItems.sort(
-      (itemA, itemB) => getWinningOffer(itemB).discountPercent - getWinningOffer(itemA).discountPercent,
-    );
-  }
-
-  if (filterId === "free-delivery") {
-    return sortedItems.sort((itemA, itemB) => {
-      const offerA = getWinningOffer(itemA);
-      const offerB = getWinningOffer(itemB);
-
-      return Number(offerB.freeDelivery) - Number(offerA.freeDelivery);
-    });
-  }
-
-  return sortedItems.sort(
+function sortItemsByFilter(items: HomeMenuItem[], _filterId: HomeQuickFilterId) {
+  return [...items].sort(
     (itemA, itemB) => getWinningOffer(itemA).totalPrice - getWinningOffer(itemB).totalPrice,
   );
 }

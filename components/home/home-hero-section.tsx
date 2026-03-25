@@ -32,11 +32,11 @@ export function HomeHeroSection({
     <section
       id="main"
       data-section-id="main"
-      className="flex min-h-[calc(100dvh-5rem)] sm:snap-start flex-col justify-center px-4 py-10 text-white sm:py-16 sm:px-6 lg:px-8"
+      className="flex w-full min-w-0 flex-col justify-center px-4 py-16 text-white sm:min-h-[calc(100dvh-5rem)] sm:snap-start sm:px-6 sm:py-16 lg:px-8"
     >
       <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-        <div className="space-y-6">
-          <Badge variant="secondary" className="bg-white/15 text-white">
+        <div className="space-y-4 sm:space-y-6">
+          <Badge variant="secondary" className="hidden bg-white/15 text-white sm:inline-flex">
             MrHaveFood.com
           </Badge>
 
@@ -49,7 +49,7 @@ export function HomeHeroSection({
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="hidden gap-3 sm:grid sm:grid-cols-3">
             {heroBullets.map((item) => {
               const Icon = item.icon;
 
@@ -59,17 +59,17 @@ export function HomeHeroSection({
                   className="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur"
                 >
                   <Icon className="size-5 text-white" />
-                  <p className="mt-3 font-display text-base leading-6 text-white sm:mt-4 sm:text-lg">
+                  <p className="mt-4 font-display text-lg leading-6 text-white">
                     {item.title}
                   </p>
-                  <p className="mt-1.5 text-xs leading-5 text-white/72 sm:mt-2 sm:text-sm sm:leading-6">{item.copy}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/72">{item.copy}</p>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div className="lg:pl-6">
+        <div className="hidden sm:block lg:pl-6">
           <HomeHeroChat selectedZoneId={selectedZoneId} />
         </div>
       </div>
