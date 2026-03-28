@@ -76,12 +76,6 @@ body {
   line-height: 1.65;
 }
 
-/* Full-page scroll snap — tablet and desktop only */
-@media (min-width: 640px) {
-  .page-snapping {
-    scroll-snap-type: y mandatory;
-  }
-}
 
 
 html[data-theme="dark"] body {

@@ -9,7 +9,5 @@ export const createUISlice: StateCreator<
   UISlice
 > = (set) => ({
   activeSection: "main",
-  selectedAudience: "member",
   setActiveSection: (activeSection) => set({ activeSection }),
-  setSelectedAudience: (selectedAudience) => set({ selectedAudience }),
 });

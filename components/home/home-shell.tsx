@@ -4,7 +4,6 @@ import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
 import { AuthNavActions } from "@/components/auth/auth-nav-actions";
-import { NavThemeButton } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
 import { navItems, type SectionId } from "@/lib/home-content";
 import { useHomeStore } from "@/lib/stores/use-home-store";
@@ -29,17 +28,13 @@ export function HomeShell({
   }, []); // initialise once on mount only
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-
-    if (!container) {
-      return;
+    if (typeof window !== "undefined") {
+      history.scrollRestoration = "manual";
     }
-
-    container.classList.add("page-snapping");
-
-    return () => {
-      container.classList.remove("page-snapping");
-    };
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
   }, []);
 
   useEffect(() => {
@@ -96,7 +91,7 @@ export function HomeShell({
     };
   }, [setActiveSection]);
 
-  const isHero = !["discover", "categories", "footer"].includes(activeSection as string);
+  const isHero = false;
 
   const handleNavClick = (
     event: MouseEvent<HTMLAnchorElement>,
@@ -121,12 +116,7 @@ export function HomeShell({
   return (
     <div
       ref={scrollContainerRef}
-      className="relative h-dvh overflow-x-hidden overflow-y-auto scroll-smooth scroll-pt-20 scroll-px-0"
-      style={{
-        backgroundImage: "url('/assets/banner.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-      }}
+      className="relative h-dvh overflow-x-hidden overflow-y-auto bg-white scroll-smooth scroll-pt-16"
     >
       <header
         ref={headerRef}
@@ -141,25 +131,14 @@ export function HomeShell({
           <a
             href="#main"
             onClick={(event) => handleNavClick(event, "main")}
-            className="flex items-center gap-3"
+            className="flex items-center"
           >
-            <span className="grid size-10 place-items-center rounded-full bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-accent))] font-display text-sm font-bold text-white">
-              MF
-            </span>
-            <div className="hidden min-w-0 sm:block">
-              <p className={cn(
-                "font-display text-base font-bold leading-none transition-colors duration-300",
-                isHero ? "text-white" : "text-(--brand-primary)",
-              )}>
-                MrHaveFood.com
-              </p>
-              <p className={cn(
-                "mt-1 text-xs leading-none transition-colors duration-300",
-                isHero ? "text-white/65" : "text-[#5b6d7d]",
-              )}>
-                Great promotions deals
-              </p>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/logoMrHaveFood.png"
+              alt="MrHaveFood"
+              className="h-12 w-auto object-contain sm:h-13"
+            />
           </a>
 
           <nav aria-label="Primary" className="hidden lg:block">
@@ -188,7 +167,6 @@ export function HomeShell({
           </nav>
 
           <div className="flex items-center gap-2">
-            <NavThemeButton />
             <AuthNavActions />
           </div>
         </div>

@@ -1,37 +1,22 @@
-import { HomeCategoriesSection } from "@/components/home/home-categories-section";
-import { HomeDiscoverSection } from "@/components/home/home-discover-section";
 import { HomeFooterSection } from "@/components/home/home-footer-section";
-import { HomeHeroSection } from "@/components/home/home-hero-section";
+import { HomePromoHero } from "@/components/home/home-promo-hero";
+import { HomePlatformSection } from "@/components/home/home-platform-section";
+import { HomeRestaurantsSection } from "@/components/home/home-restaurants-section";
 import { HomeShell } from "@/components/home/home-shell";
-import {
-  getFilteredCategorySections,
-  type HomeQuickFilterId,
-  type HomeZoneId,
-} from "@/lib/home-experience";
+import { fallbackPromotions } from "@/lib/promotions-data";
+import type { Promotion, Restaurant } from "@/lib/supabase";
 
 type HomePageProps = {
-  activeQuickFilter: HomeQuickFilterId;
-  selectedZoneId: HomeZoneId;
+  promotions: Promotion[];
+  restaurants?: Restaurant[];
 };
 
-export function HomePage({
-  activeQuickFilter,
-  selectedZoneId,
-}: HomePageProps) {
-  const sections = getFilteredCategorySections(selectedZoneId, activeQuickFilter);
-
+export function HomePage({ promotions, restaurants }: HomePageProps) {
   return (
     <HomeShell>
-      <HomeHeroSection selectedZoneId={selectedZoneId} />
-      <HomeDiscoverSection
-        activeQuickFilter={activeQuickFilter}
-        selectedZoneId={selectedZoneId}
-      />
-      <HomeCategoriesSection
-        activeQuickFilter={activeQuickFilter}
-        sections={sections}
-        selectedZoneId={selectedZoneId}
-      />
+      <HomePromoHero promotions={promotions} />
+      <HomePlatformSection promotions={promotions} />
+      <HomeRestaurantsSection restaurants={restaurants} />
       <HomeFooterSection />
     </HomeShell>
   );

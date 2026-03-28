@@ -1,23 +1,49 @@
 import { Suspense } from "react";
-
 import { HomePage } from "@/components/home-page";
-import type { HomeQuickFilterId, HomeZoneId } from "@/lib/home-experience";
+import { fallbackPromotions } from "@/lib/promotions-data";
+import type { Promotion, Restaurant } from "@/lib/supabase";
 
-type PageProps = {
-  searchParams: Promise<{ zone?: string; filter?: string }>;
-};
+async function fetchPromotions(): Promise<Promotion[]> {
+  try {
+    const { createSupabaseAdmin } = await import("@/lib/supabase");
+    const supabase = createSupabaseAdmin();
+    const { data } = await supabase
+      .from("promotions")
+      .select("*")
+      .eq("is_active", true)
+      .order("fetched_at", { ascending: false });
 
-export default async function Page({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const selectedZoneId = (params.zone ?? "all") as HomeZoneId;
-  const activeQuickFilter = (params.filter ?? "all") as HomeQuickFilterId;
+    return (data && data.length > 0) ? data : fallbackPromotions;
+  } catch {
+    return fallbackPromotions;
+  }
+}
+
+async function fetchRestaurants(): Promise<Restaurant[]> {
+  try {
+    const { createSupabaseAdmin } = await import("@/lib/supabase");
+    const supabase = createSupabaseAdmin();
+    const { data } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function Page() {
+  const [promotions, restaurants] = await Promise.all([
+    fetchPromotions(),
+    fetchRestaurants(),
+  ]);
 
   return (
     <Suspense>
-      <HomePage
-        activeQuickFilter={activeQuickFilter}
-        selectedZoneId={selectedZoneId}
-      />
+      <HomePage promotions={promotions} restaurants={restaurants} />
     </Suspense>
   );
 }

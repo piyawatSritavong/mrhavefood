@@ -40,8 +40,8 @@ export const metadata: Metadata = {
       "Compare smarter. Eat better. Pay less. A value-first food discovery layer for Thailand.",
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/faviconMrHaveFood.svg",
+    apple: "/faviconMrHaveFood.svg",
   },
   manifest: "/manifest.webmanifest",
 };
