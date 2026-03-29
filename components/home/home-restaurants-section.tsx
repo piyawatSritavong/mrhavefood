@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { fallbackRestaurants } from "@/lib/promotions-data";
 import type { Restaurant } from "@/lib/supabase";
@@ -33,11 +34,13 @@ export function HomeRestaurantsSection({
               className="flex gap-3 rounded-xl border border-[#ebe7e7] bg-white p-2.5"
             >
               {restaurant.image_url ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <Image
                   src={restaurant.image_url}
                   alt={restaurant.name}
+                  width={68}
+                  height={68}
                   className="size-17 shrink-0 rounded-lg object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="size-17 shrink-0 rounded-lg bg-[#f5f0ef]" />

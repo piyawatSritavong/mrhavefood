@@ -75,7 +75,10 @@ export function FloatingAIButton() {
 
     const mm = (e: MouseEvent) => move(e.clientX, e.clientY);
     const mu = (e: MouseEvent) => end(e.clientX, e.clientY);
-    const tm = (e: TouchEvent) => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); };
+    const tm = (e: TouchEvent) => {
+      if (drag.current.active) e.preventDefault();
+      move(e.touches[0].clientX, e.touches[0].clientY);
+    };
     const te = (e: TouchEvent) => end(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
 
     window.addEventListener("mousemove", mm);
@@ -229,7 +232,7 @@ export function FloatingAIButton() {
         <div className={`h-16 w-16 overflow-hidden rounded-full shadow-2xl ring-2 ring-white/60 transition-transform duration-150 ${
           dragMode ? "scale-110 cursor-grabbing" : "cursor-pointer hover:scale-105"
         }`}>
-          <Image src="/assets/aimrhavefood.png" alt="Mr.AI" width={64} height={64} className="h-full w-full object-cover" draggable={false} />
+          <Image src="/assets/aimrhavefood.png" alt="Mr.AI" width={64} height={64} className="h-full w-full object-cover" priority draggable={false} />
         </div>
       </div>
     </>

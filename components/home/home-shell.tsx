@@ -2,6 +2,7 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 
 import { AuthNavActions } from "@/components/auth/auth-nav-actions";
 import { cn } from "@/lib/utils";
@@ -133,11 +134,14 @@ export function HomeShell({
             onClick={(event) => handleNavClick(event, "main")}
             className="flex items-center"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/assets/logoMrHaveFood.png"
               alt="MrHaveFood"
-              className="h-12 w-auto object-contain sm:h-13"
+              width={160}
+              height={52}
+              className="object-contain"
+              style={{ height: "3rem", width: "auto" }}
+              priority
             />
           </a>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { SearchIcon } from "@/components/ui/icons";
 import { platformMeta, fallbackPromotions } from "@/lib/promotions-data";
@@ -100,11 +101,12 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
             style={{ height: "clamp(250px, 52vw, 380px)" }}
           >
             {/* Background image */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/assets/banner.png"
               alt=""
-              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
+              fill
+              className="object-cover transition-opacity duration-500"
+              priority
             />
 
             {/* Dark + platform tint overlay */}
