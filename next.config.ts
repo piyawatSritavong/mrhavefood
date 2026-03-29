@@ -2,16 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   compress: true,
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.mrhavefood.com" }],
-        destination: "https://mrhavefood.com/:path*",
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     if (!isProd) return [];
