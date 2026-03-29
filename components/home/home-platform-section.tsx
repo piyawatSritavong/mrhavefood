@@ -76,7 +76,7 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
                 key={platform}
                 href={meta.webUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="flex flex-col gap-1.5 rounded-xl p-3 transition-opacity hover:opacity-80"
                 style={{ backgroundColor: meta.bg }}
               >
@@ -107,7 +107,7 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
                 key={promo.id}
                 href={meta.webUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="flex items-center gap-3 rounded-xl border border-[#ebe7e7] bg-white p-2.5"
               >
                 <div

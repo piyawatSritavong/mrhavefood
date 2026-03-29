@@ -1,13 +1,52 @@
-/* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata, Viewport } from "next";
+import { Inter, Kanit, Mitr, Prompt } from "next/font/google";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const kanit = Kanit({
+  subsets: ["thai", "latin"],
+  weight: ["700"],
+  variable: "--font-kanit",
+  display: "swap",
+});
+
+const mitr = Mitr({
+  subsets: ["thai", "latin"],
+  weight: ["500"],
+  variable: "--font-mitr",
+  display: "swap",
+});
+
+const prompt = Prompt({
+  subsets: ["thai", "latin"],
+  weight: ["400"],
+  variable: "--font-prompt",
+  display: "swap",
+});
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "MrHaveFood",
+  url: "https://mrhavefood.com",
+  logo: "https://mrhavefood.com/faviconMrHaveFood.svg",
+  description:
+    "MrHaveFood.com helps Thai food lovers compare delivery prices, verify truth with real receipts, and discover worth-it zones through a visual savings map.",
+  sameAs: ["https://www.mrhavefood.com"],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://mrhavefood.com"),
   title: {
-    default: "MrHaveFood",
+    default: "MrHaveFood — เปรียบราคาส่งอาหาร ทุกแพลตฟอร์ม ในไทย",
     template: "%s | MrHaveFood",
   },
   description:
@@ -72,17 +111,15 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className="scroll-smooth"
+      className={`scroll-smooth ${inter.variable} ${kanit.variable} ${mitr.variable} ${prompt.variable}`}
       data-theme="light"
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@600&family=Kanit:wght@700&family=Mitr:wght@500&family=Prompt:wght@400&display=swap"
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">

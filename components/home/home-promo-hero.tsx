@@ -185,7 +185,7 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
                 <a
                   href={meta.webUrl}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="mt-4 inline-flex items-center rounded-full px-5 py-2 text-[13px] font-bold"
                   style={{ backgroundColor: meta.color, color: "white" }}
                 >
@@ -215,9 +215,9 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
       <div className="bg-white px-3 pb-4 pt-3 sm:px-4 lg:px-6">
         <div className="mx-auto max-w-7xl">
           <Badge variant="secondary" className="mb-1.5">{thaiDays[new Date().getDay()]}</Badge>
-          <p className="mb-2 font-display text-base font-bold text-(--brand-primary)">
+          <h1 className="mb-2 font-display text-base font-bold text-(--brand-primary)">
             กินอะไรดี มีโปรวันนี้ ?
-          </p>
+          </h1>
           <div className="flex gap-3 overflow-x-auto pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {foodCategories.map((cat) => {
               const isActive = activeCategory === cat.id;
