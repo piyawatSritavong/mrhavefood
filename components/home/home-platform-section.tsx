@@ -8,6 +8,19 @@ type HomePlatformSectionProps = {
 };
 
 const thaiMonths = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const thaiMonthsShort = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+function fmtDate(d: string): string {
+  const dt = new Date(d);
+  return `${dt.getDate()} ${thaiMonthsShort[dt.getMonth()]} ${String(dt.getFullYear() + 543).slice(2)}`;
+}
+
+function formatDateRange(start: string | null, end: string | null): string | null {
+  if (!start && !end) return null;
+  if (start && end) return `${fmtDate(start)} – ${fmtDate(end)}`;
+  if (start) return fmtDate(start);
+  return fmtDate(end!);
+}
 
 const platformOrder = ["GrabFood", "LINE MAN", "ShopeeFood", "Robinhood"];
 
@@ -99,26 +112,27 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-(--brand-primary)">{promo.campaign_name}</p>
-                  {promo.conditions && (
-                    <p className="text-[11px] text-[#5c6e7f]">{promo.conditions}</p>
+                  {(promo.conditions || promo.promo_code) && (
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-[#5c6e7f]">
+                      {promo.conditions && <span>{promo.conditions}</span>}
+                      {promo.promo_code &&
+                        promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
+                        promo.promo_code !== "เก็บคูปองในแอป" && (
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-[10px] font-bold tracking-wider"
+                            style={{ borderColor: meta.color, color: meta.color }}
+                          >
+                            {promo.promo_code}
+                          </Badge>
+                        )}
+                    </p>
                   )}
                 </div>
 
-                {promo.promo_code &&
-                  promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
-                  promo.promo_code !== "เก็บคูปองในแอป" && (
-                    <div
-                      className="shrink-0 rounded-md border border-dashed px-2 py-0.5"
-                      style={{ borderColor: meta.color + "60" }}
-                    >
-                      <span
-                        className="font-mono text-[10px] font-bold tracking-wider"
-                        style={{ color: meta.color }}
-                      >
-                        {promo.promo_code}
-                      </span>
-                    </div>
-                  )}
+                <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-[10px] text-[#9aa5b1]">
+                  {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
+                </Badge>
               </a>
             );
           })}

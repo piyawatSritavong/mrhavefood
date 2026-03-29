@@ -2,6 +2,20 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+
+const thaiMonthsShort = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+function fmtDate(d: string): string {
+  const dt = new Date(d);
+  return `${dt.getDate()} ${thaiMonthsShort[dt.getMonth()]} ${String(dt.getFullYear() + 543).slice(2)}`;
+}
+
+function formatDateRange(start: string | null, end: string | null, fallback?: string): string {
+  if (start && end) return `${fmtDate(start)} – ${fmtDate(end)}`;
+  if (start) return fmtDate(start);
+  if (end) return fmtDate(end);
+  return fallback ? fmtDate(fallback) : "";
+}
 import { SearchIcon } from "@/components/ui/icons";
 import { platformMeta, fallbackPromotions } from "@/lib/promotions-data";
 import type { Promotion } from "@/lib/supabase";
@@ -157,6 +171,13 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
                 {slide.conditions && (
                   <p className="mt-1.5 text-[11px] text-white/60 sm:text-xs">
                     {slide.conditions}
+                  </p>
+                )}
+
+                {/* Date range */}
+                {formatDateRange(slide.start_date, slide.end_date, slide.fetched_at) && (
+                  <p className="mt-1 text-[10px] text-white/45">
+                    📅 {formatDateRange(slide.start_date, slide.end_date, slide.fetched_at)}
                   </p>
                 )}
 

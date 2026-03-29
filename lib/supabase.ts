@@ -17,6 +17,8 @@ export type Promotion = {
   campaign_name: string;
   promo_code: string | null;
   conditions: string | null;
+  start_date: string | null;
+  end_date: string | null;
   reference_link: string | null;
   fetched_at: string;
   is_active: boolean;
@@ -42,6 +44,8 @@ CREATE TABLE promotions (
   campaign_name TEXT NOT NULL,
   promo_code TEXT,
   conditions TEXT,
+  start_date DATE,
+  end_date DATE,
   reference_link TEXT,
   fetched_at TIMESTAMPTZ DEFAULT NOW(),
   is_active BOOLEAN DEFAULT true
