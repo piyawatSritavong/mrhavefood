@@ -112,25 +112,25 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-(--brand-primary)">{promo.campaign_name}</p>
-                  {(promo.conditions || promo.promo_code) && (
-                    <p className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-[#5c6e7f]">
-                      {promo.conditions && <span>{promo.conditions}</span>}
-                      {promo.promo_code &&
-                        promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
-                        promo.promo_code !== "เก็บคูปองในแอป" && (
-                          <Badge
-                            variant="outline"
-                            className="font-mono text-[10px] font-bold tracking-wider"
-                            style={{ borderColor: meta.color, color: meta.color }}
-                          >
-                            {promo.promo_code}
-                          </Badge>
-                        )}
-                    </p>
+                  {promo.conditions && (
+                    <p className="mt-0.5 text-[11px] text-[#5c6e7f]">{promo.conditions}</p>
                   )}
-                  <Badge variant="secondary" className="mt-1.5 whitespace-nowrap text-[10px] text-[#9aa5b1]">
-                    {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
-                  </Badge>
+                  <div className="mt-1.5 flex items-end justify-between gap-2">
+                    <Badge variant="secondary" className="whitespace-nowrap text-[10px] text-[#9aa5b1]">
+                      {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
+                    </Badge>
+                    {promo.promo_code &&
+                      promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
+                      promo.promo_code !== "เก็บคูปองในแอป" && (
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-[10px] font-bold tracking-wider"
+                          style={{ borderColor: meta.color, color: meta.color }}
+                        >
+                          {promo.promo_code}
+                        </Badge>
+                      )}
+                  </div>
                 </div>
               </a>
             );
