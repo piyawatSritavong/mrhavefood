@@ -128,11 +128,10 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
                         )}
                     </p>
                   )}
+                  <Badge variant="secondary" className="mt-1.5 whitespace-nowrap text-[10px] text-[#9aa5b1]">
+                    {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
+                  </Badge>
                 </div>
-
-                <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-[10px] text-[#9aa5b1]">
-                  {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
-                </Badge>
               </a>
             );
           })}
