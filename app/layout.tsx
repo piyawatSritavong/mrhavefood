@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata, Viewport } from "next";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
+import { FloatingAIButton } from "@/components/floating-ai-button";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -87,6 +88,7 @@ export default function RootLayout({
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
         <AuthSessionProvider>
           {children}
+          <FloatingAIButton />
         </AuthSessionProvider>
       </body>
     </html>
