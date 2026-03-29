@@ -72,7 +72,7 @@ export const fallbackPromotions: Promotion[] = [
     id: "4",
     platform: "LINE MAN",
     campaign_name: "Rabbit Rewards Special",
-    promo_code: "ต้องแลกรับรหัสผ่านแอป Rabbit Rewards",
+    promo_code: "แลกรับที่ Rabbit Rewards App",
     conditions: "สั่งขั้นต่ำ 200 บาท, ใช้ได้เฉพาะร้านที่ร่วมรายการ (GP), จำกัด 1 รหัส/สิทธิ์",
     start_date: "2025-09-16",
     end_date: "2026-03-31",

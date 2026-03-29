@@ -17,7 +17,7 @@ export function HomeRestaurantsSection({
     <section
       id="restaurants"
       data-section-id="restaurants"
-      className="w-full min-w-0 bg-white px-3 py-4 sm:px-4 sm:py-6 lg:px-6"
+      className="w-full min-w-0 bg-white px-3 py-8 sm:px-4 sm:py-12 lg:px-6"
     >
       <div className="mx-auto max-w-7xl space-y-3">
         <div>

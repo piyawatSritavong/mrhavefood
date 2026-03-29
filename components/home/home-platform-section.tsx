@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { platformMeta } from "@/lib/promotions-data";
@@ -37,11 +40,17 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
     return acc;
   }, {});
 
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 3000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <section
       id="platforms"
       data-section-id="platforms"
-      className="w-full min-w-0 bg-(--brand-surface) px-3 py-4 sm:px-4 sm:py-6 lg:px-6"
+      className="w-full min-w-0 bg-(--brand-surface) px-3 py-8 sm:px-4 sm:py-12 lg:px-6"
     >
       <div className="mx-auto max-w-7xl space-y-3">
         <div>
@@ -79,7 +88,7 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
                   <ArrowRightIcon className="size-3 opacity-40" />
                 </div>
                 <p className="text-[11px] font-semibold leading-4" style={{ color: meta.textColor }}>
-                  {items.length > 0 ? items[0].campaign_name : "ยังไม่มีโปรวันนี้"}
+                  {items.length > 0 ? items[tick % items.length].campaign_name : "ยังไม่มีโปรวันนี้"}
                 </p>
                 <p className="text-[10px] text-[#9aa5b1]">{items.length} โปรโมชั่น</p>
               </a>
