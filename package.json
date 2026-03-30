@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/20260323160000_normalize_member_state_and_seed_tables/migration.sql",
-    "db:seed": "node prisma/seed.mjs"
+    "db:migrate": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/20260330000000_init/migration.sql",
+    "db:seed": "node --env-file=.env prisma/seed.mjs",
+    "db:setup": "npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

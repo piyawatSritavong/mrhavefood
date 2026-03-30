@@ -113,19 +113,31 @@ export function FloatingAIButton() {
     }, LONG_PRESS_MS);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const text = inputVal.trim();
     if (!text || typing) return;
     setInputVal("");
     setMessages((prev) => [...prev, { role: "user", text }]);
     setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "ขอบคุณสำหรับคำถามนะครับ! 🚀 ระบบ AI กำลังพัฒนาอยู่ เร็วๆ นี้จะตอบได้เต็มรูปแบบแน่นอนครับ 😊" },
+        { role: "ai", text: data.reply ?? "ขอโทษครับ ไม่สามารถตอบได้ในขณะนี้" },
       ]);
-    }, 1500);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "ขอโทษครับ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง 🙏" },
+      ]);
+    } finally {
+      setTyping(false);
+    }
   };
 
   if (hidden) return null;

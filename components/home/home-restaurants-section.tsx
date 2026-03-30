@@ -88,10 +88,21 @@ export function HomeRestaurantsSection({
           ))}
         </div>
 
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center py-4">
           <a href="/coming-soon" className="rounded-full border border-[#e3dddd] px-6 py-2 text-sm font-semibold text-(--brand-primary) transition-colors hover:bg-[#edf4fb]">
             See more
           </a>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl my-4">
+          <Image
+            src="/assets/Call2ActionMrHaveFoodFooter.jpg"
+            alt="MrHaveFood Call to Action"
+            width={2606}
+            height={246}
+            className="w-full object-cover"
+            style={{ height: "auto" }}
+          />
         </div>
       </div>
     </section>

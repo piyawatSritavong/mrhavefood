@@ -1,364 +1,190 @@
-import { PrismaClient, Platform, ReceiptStatus } from "@prisma/client";
+// @ts-check
+import { createClient } from "@supabase/supabase-js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const prisma = new PrismaClient();
+// ── Supabase ─────────────────────────────────────────────────
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const supabase    = createClient(supabaseUrl, supabaseKey);
 
-const compareScenarios = [
+// ── Gemini ───────────────────────────────────────────────────
+const GEMINI_KEY  = process.env.GEMINI_PROMOTIONS_API_KEY ?? "";
+
+const THAI_MONTHS = [
+  "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+  "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม",
+];
+
+function buildPrompt() {
+  const d = new Date();
+  const thaiDate = `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+  return `Role: คุณคือผู้เชี่ยวชาญด้านการวิเคราะห์ตลาดและข้อมูลโปรโมชั่นอาหารเดลิเวอรี่ในประเทศไทย (Thailand Food Delivery Market Analyst)
+Task: ช่วยสืบค้นข้อมูลแคมเปญ รหัสส่วนลด (Promo Codes) และโปรโมชั่นล่าสุดจากแพลตฟอร์ม GrabFood, LINE MAN, ShopeeFood และ Robinhood ประจำวันที่ ${thaiDate}
+Search Context: ให้เน้นค้นหาจาก Official Facebook Page, เว็บไซต์ข่าวโปรโมชั่น, และหน้า Landing Page ของแคมเปญที่เปิดเป็นสาธารณะ
+Output Format: ให้ตอบกลับเป็น JSON เท่านั้น (ห้ามมีคำเกริ่นนำหรือคำลงท้าย) โดยมีโครงสร้างดังนี้:
+[
   {
-    id: "krapao-thonglor",
-    title: "กะเพราเนื้อ + ไข่ดาว",
-    restaurant: "กะเพราโคตรดึก",
-    district: "Thonglor",
-    distanceKm: 1.8,
-    rating: 4.8,
-    cuisine: "Thai street food",
-    summary: "ร้านดึกยอดนิยมสำหรับสายเผ็ดที่อยากได้จานไวและรสแรง",
-    tags: ["late-night", "beef", "spicy", "rice"],
-    offers: [
-      {
-        platform: Platform.GRAB,
-        totalPrice: 182,
-        foodPrice: 149,
-        deliveryFee: 21,
-        serviceFee: 12,
-        discount: 0,
-        etaMinutes: 24,
-        note: "ETA เร็วสุด",
-      },
-      {
-        platform: Platform.LINE_MAN,
-        totalPrice: 169,
-        foodPrice: 149,
-        deliveryFee: 17,
-        serviceFee: 8,
-        discount: 5,
-        etaMinutes: 31,
-        note: "คุ้มที่สุดวันนี้",
-      },
-      {
-        platform: Platform.SHOPEEFOOD,
-        totalPrice: 176,
-        foodPrice: 149,
-        deliveryFee: 18,
-        serviceFee: 9,
-        discount: 0,
-        etaMinutes: 28,
-        note: "โค้ดส่งฟรีพร้อมใช้",
-      },
-    ],
+    "platform": "ชื่อแพลตฟอร์ม (GrabFood / LINE MAN / ShopeeFood / Robinhood)",
+    "campaign_name": "ชื่อแคมเปญหรือหัวข้อโปรโมชั่น",
+    "description": "รายละเอียดโปรโมชั่นโดยย่อ",
+    "promo_code": "รหัสส่วนลด (ถ้ามี ถ้าไม่มีให้ใส่ null)",
+    "discount_value": "มูลค่าส่วนลด เช่น 50%, 100 บาท (ถ้ามี)",
+    "start_date": "วันเริ่มต้นโปรโมชั่น (รูปแบบ YYYY-MM-DD ถ้าไม่ทราบให้ใส่ null)",
+    "end_date": "วันสิ้นสุดโปรโมชั่น (รูปแบบ YYYY-MM-DD ถ้าไม่ทราบให้ใส่ null)",
+    "conditions": "เงื่อนไขหลัก (เช่น สั่งขั้นต่ำ 200.-, เฉพาะร้านที่ร่วมรายการ)",
+    "reference_url": "ลิงก์อ้างอิงแหล่งที่มาของข้อมูล"
+  }
+]`;
+}
+
+function parseJSON(text) {
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  return JSON.parse(cleaned);
+}
+
+// ── Fallback restaurants ──────────────────────────────────────
+const RESTAURANTS = [
+  {
+    name: "กะเพราตาแป๊ะ",
+    category: "อาหารไทย",
+    image_url: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
+    line_oa_url: "https://line.me/ti/p/@mrhavefood",
+    description: "กะเพราหมูกรอบเทพ การันตีความอร่อย สั่งตรงจากร้าน ไม่เสียค่า GP",
+    is_active: true,
   },
   {
-    id: "boat-noodle-onnut",
-    title: "ก๋วยเตี๋ยวเรือ + เกี๊ยวทอด",
-    restaurant: "เรือเข้มท่าอ่อนนุช",
-    district: "Onnut",
-    distanceKm: 2.4,
-    rating: 4.7,
-    cuisine: "Boat noodle",
-    summary: "เหมาะกับมื้อเย็นคุ้ม ๆ ที่อยากได้ของทอดเพิ่มโดยราคาไม่โดด",
-    tags: ["noodle", "thai", "budget", "fried"],
-    offers: [
-      {
-        platform: Platform.GRAB,
-        totalPrice: 158,
-        foodPrice: 124,
-        deliveryFee: 22,
-        serviceFee: 12,
-        discount: 0,
-        etaMinutes: 27,
-        note: "ระยะใกล้สุด",
-      },
-      {
-        platform: Platform.LINE_MAN,
-        totalPrice: 152,
-        foodPrice: 124,
-        deliveryFee: 19,
-        serviceFee: 9,
-        discount: 0,
-        etaMinutes: 30,
-        note: "สมดุลสุด",
-      },
-      {
-        platform: Platform.SHOPEEFOOD,
-        totalPrice: 145,
-        foodPrice: 124,
-        deliveryFee: 16,
-        serviceFee: 8,
-        discount: 3,
-        etaMinutes: 33,
-        note: "สุทธิต่ำสุด",
-      },
-    ],
+    name: "ข้าวมันไก่ต้นตำรับ",
+    category: "อาหารจีน",
+    image_url: "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
+    line_oa_url: "https://line.me/ti/p/@mrhavefood",
+    description: "ข้าวมันไก่สูตรเด็ดต้นตำรับ ไก่ต้มนุ่ม ข้าวหอม น้ำจิ้มเข้มข้น",
+    is_active: true,
   },
   {
-    id: "chicken-rice-ari",
-    title: "ข้าวมันไก่ + ชาเย็น",
-    restaurant: "เฮียช้าง ข้าวมันไก่อารีย์",
-    district: "Ari",
-    distanceKm: 1.1,
-    rating: 4.9,
-    cuisine: "Chicken rice",
-    summary: "ร้านกลางวันยอดนิยมที่ราคาแข่งกันแรง โดยเฉพาะช่วงคูปองส่งฟรี",
-    tags: ["lunch", "chicken-rice", "ari", "drink"],
-    offers: [
-      {
-        platform: Platform.GRAB,
-        totalPrice: 134,
-        foodPrice: 109,
-        deliveryFee: 13,
-        serviceFee: 12,
-        discount: 0,
-        etaMinutes: 18,
-        note: "ไวและนิ่ง",
-      },
-      {
-        platform: Platform.LINE_MAN,
-        totalPrice: 128,
-        foodPrice: 109,
-        deliveryFee: 12,
-        serviceFee: 8,
-        discount: 1,
-        etaMinutes: 24,
-        note: "คุ้มจากค่าส่ง",
-      },
-      {
-        platform: Platform.SHOPEEFOOD,
-        totalPrice: 139,
-        foodPrice: 109,
-        deliveryFee: 14,
-        serviceFee: 8,
-        discount: 0,
-        etaMinutes: 22,
-        note: "ราคาคงที่",
-      },
-    ],
-  },
-  {
-    id: "roti-ekkamai",
-    title: "โรตี + นมสด",
-    restaurant: "โรตีหน้าโค้งเอกมัย",
-    district: "Ekkamai",
-    distanceKm: 2.9,
-    rating: 4.6,
-    cuisine: "Dessert",
-    summary: "ของหวานปลายวันสำหรับสายคอนเทนต์และสายกินเล่นหลังเลิกงาน",
-    tags: ["dessert", "roti", "night", "milk"],
-    offers: [
-      {
-        platform: Platform.GRAB,
-        totalPrice: 112,
-        foodPrice: 84,
-        deliveryFee: 16,
-        serviceFee: 12,
-        discount: 0,
-        etaMinutes: 19,
-        note: "ไวสุดหลังงาน",
-      },
-      {
-        platform: Platform.LINE_MAN,
-        totalPrice: 104,
-        foodPrice: 84,
-        deliveryFee: 14,
-        serviceFee: 8,
-        discount: 2,
-        etaMinutes: 26,
-        note: "ถูกสุดชัดเจน",
-      },
-      {
-        platform: Platform.SHOPEEFOOD,
-        totalPrice: 107,
-        foodPrice: 84,
-        deliveryFee: 13,
-        serviceFee: 8,
-        discount: 2,
-        etaMinutes: 23,
-        note: "มีโค้ดหมุนเวียน",
-      },
-    ],
+    name: "ส้มตำบ้านไร่",
+    category: "อาหารอีสาน",
+    image_url: "https://images.pexels.com/photos/2347311/pexels-photo-2347311.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
+    line_oa_url: "https://line.me/ti/p/@mrhavefood",
+    description: "ส้มตำลาวแซ่บนัว ปลาร้าแท้ๆ ส่งตรงจากร้าน",
+    is_active: true,
   },
 ];
 
-const demoMember = {
-  memberKey: "email:member@mrhavefood.com",
-  email: "member@mrhavefood.com",
-  name: "MrHaveFood Member",
-  rewardPoints: 240,
-  favorites: [
-    { scenarioId: "krapao-thonglor", createdAt: new Date("2026-03-23T08:00:00.000Z") },
-    { scenarioId: "chicken-rice-ari", createdAt: new Date("2026-03-23T07:40:00.000Z") },
-  ],
-  alerts: [
-    {
-      id: "krapao-thonglor-line-man-149",
-      scenarioId: "krapao-thonglor",
-      platform: Platform.LINE_MAN,
-      targetPrice: 149,
-      enabled: true,
-      createdAt: new Date("2026-03-23T08:00:00.000Z"),
-    },
-    {
-      id: "roti-ekkamai-shopeefood-103",
-      scenarioId: "roti-ekkamai",
-      platform: Platform.SHOPEEFOOD,
-      targetPrice: 103,
-      enabled: true,
-      createdAt: new Date("2026-03-23T09:15:00.000Z"),
-    },
-  ],
-  receipts: [
-    {
-      id: "chicken-rice-ari-line-man-1742712900000",
-      fileName: "ari-lunch-proof.jpg",
-      scenarioId: "chicken-rice-ari",
-      platform: Platform.LINE_MAN,
-      restaurant: "เฮียช้าง ข้าวมันไก่อารีย์",
-      itemName: "ข้าวมันไก่ + ชาเย็น",
-      district: "Ari",
-      totalPrice: 128,
-      createdAt: new Date("2026-03-22T12:15:00.000Z"),
-      verifiedAt: new Date("2026-03-22T12:15:45.000Z"),
-      status: ReceiptStatus.VERIFIED,
-      pointsAwarded: 120,
-    },
-    {
-      id: "krapao-thonglor-grab-1742806800000",
-      fileName: "thonglor-night-run.png",
-      scenarioId: "krapao-thonglor",
-      platform: Platform.GRAB,
-      restaurant: "กะเพราโคตรดึก",
-      itemName: "กะเพราเนื้อ + ไข่ดาว",
-      district: "Thonglor",
-      totalPrice: 182,
-      createdAt: new Date("2026-03-23T14:20:00.000Z"),
-      verifiedAt: null,
-      status: ReceiptStatus.PROCESSING,
-      pointsAwarded: 0,
-    },
-  ],
-};
+// ── Steps ────────────────────────────────────────────────────
+// ── Fallback promotions (used when Gemini quota exceeded) ─────
+const FALLBACK_PROMOTIONS = [
+  { platform: "GrabFood",   campaign_name: "GSB Debit Card Exclusive",     promo_code: "GSB100",     conditions: "สั่งขั้นต่ำ 300 บาท, ชำระผ่าน GrabPay ด้วยบัตรเดบิต GSB, จำกัด 2 สิทธิ์/คน/เดือน", start_date: "2026-01-01", end_date: "2026-12-31", reference_link: "https://www.grab.com/th/en/blog/gsb_y2026/" },
+  { platform: "GrabFood",   campaign_name: "KBank Credit Card Promotion",  promo_code: "KBANKGF",    conditions: "สั่งขั้นต่ำ 500 บาท, ชำระผ่าน GrabPay ด้วยบัตรเครดิต KBank ที่ร่วมรายการ, จำกัด 1 สิทธิ์/คน/เดือน", start_date: "2026-03-01", end_date: "2027-02-28", reference_link: "https://www.grab.com/th/en/blog/kbankgf_2026/" },
+  { platform: "LINE MAN",   campaign_name: "KTC VISA Foodie",              promo_code: "KTCVSPD80",  conditions: "สั่งขั้นต่ำ 450 บาท (เฉพาะค่าอาหาร), ชำระผ่านบัตรเครดิต KTC VISA เท่านั้น", start_date: "2026-02-01", end_date: "2026-07-31", reference_link: "https://lineman.line.me/partnership-ktc/" },
+  { platform: "LINE MAN",   campaign_name: "Rabbit Rewards Special",       promo_code: "ต้องแลกรับรหัสผ่านแอป Rabbit Rewards", conditions: "สั่งขั้นต่ำ 200 บาท, ใช้ได้เฉพาะร้านที่ร่วมรายการ (GP), จำกัด 1 รหัส/สิทธิ์", start_date: "2025-09-16", end_date: "2026-03-31", reference_link: "https://rewards.rabbit.co.th/" },
+  { platform: "LINE MAN",   campaign_name: "LINE MAN MART x Big C",        promo_code: "BIGC200",    conditions: "ช้อปขั้นต่ำ 800 บาท ที่ Big C ผ่านบริการ LINE MAN MART", start_date: "2026-03-01", end_date: "2026-03-31", reference_link: "https://lineman.line.me/how-to-apply-promo-code-2/" },
+  { platform: "ShopeeFood", campaign_name: "ShopeeFood x KFC New User",    promo_code: "เก็บคูปองในแอป", conditions: "เฉพาะลูกค้าใหม่, ไม่มีขั้นต่ำ, ใช้ได้กับเมนูที่ร่วมรายการ", start_date: null, end_date: null, reference_link: "https://promotion.thairath.co.th/shopee-food-coupons/" },
+  { platform: "ShopeeFood", campaign_name: "ShopeeFood x McDonald's",      promo_code: null,         conditions: "สำหรับทุกผู้ใช้, เฉพาะเมนูเซ็ตที่ร่วมรายการ, ไม่มีขั้นต่ำ", start_date: null, end_date: null, reference_link: "https://promotion.thairath.co.th/shopee-food-coupons/" },
+  { platform: "Robinhood",  campaign_name: "Robinhood Food (Current Status)", promo_code: null,      conditions: "ตรวจสอบราคาพิเศษได้ที่หน้าแอปพลิเคชันในส่วน 'ดีลดีร้านดัง'", start_date: "2026-03-01", end_date: "2026-03-31", reference_link: "https://www.robinhood.co.th/" },
+];
 
-async function seedCompareScenarios() {
-  for (const scenario of compareScenarios) {
-    await prisma.compareScenario.upsert({
-      where: { id: scenario.id },
-      update: {
-        title: scenario.title,
-        restaurant: scenario.restaurant,
-        district: scenario.district,
-        distanceKm: scenario.distanceKm,
-        rating: scenario.rating,
-        cuisine: scenario.cuisine,
-        summary: scenario.summary,
-        tags: scenario.tags,
-      },
-      create: {
-        id: scenario.id,
-        title: scenario.title,
-        restaurant: scenario.restaurant,
-        district: scenario.district,
-        distanceKm: scenario.distanceKm,
-        rating: scenario.rating,
-        cuisine: scenario.cuisine,
-        summary: scenario.summary,
-        tags: scenario.tags,
-      },
-    });
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"];
 
-    await prisma.scenarioOffer.deleteMany({
-      where: { scenarioId: scenario.id },
-    });
-
-    await prisma.scenarioOffer.createMany({
-      data: scenario.offers.map((offer) => ({
-        scenarioId: scenario.id,
-        platform: offer.platform,
-        totalPrice: offer.totalPrice,
-        foodPrice: offer.foodPrice,
-        deliveryFee: offer.deliveryFee,
-        serviceFee: offer.serviceFee,
-        discount: offer.discount,
-        etaMinutes: offer.etaMinutes,
-        note: offer.note,
-      })),
-    });
+async function callGemini() {
+  const genAI = new GoogleGenerativeAI(GEMINI_KEY);
+  for (const modelName of GEMINI_MODELS) {
+    try {
+      console.log(`   → Trying model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: buildPrompt() }] }],
+        // @ts-ignore — googleSearch exists at runtime but not in SDK's Tool type yet
+        tools: [{ googleSearch: {} }],
+      });
+      return parseJSON(result.response.text());
+    } catch (err) {
+      const is429 = err.message?.includes("429") || err.message?.includes("quota");
+      if (is429) {
+        console.log(`   ⚠️  ${modelName} quota exceeded, trying next model...`);
+        continue;
+      }
+      throw err;
+    }
   }
+  return null; // all models failed
 }
 
-async function seedDemoMember() {
-  await prisma.memberProfile.upsert({
-    where: { memberKey: demoMember.memberKey },
-    update: {
-      email: demoMember.email,
-      name: demoMember.name,
-      rewardPoints: demoMember.rewardPoints,
-    },
-    create: {
-      memberKey: demoMember.memberKey,
-      email: demoMember.email,
-      name: demoMember.name,
-      rewardPoints: demoMember.rewardPoints,
-    },
-  });
+const VALID_PLATFORMS = ["GrabFood", "LINE MAN", "ShopeeFood", "Robinhood"];
 
-  await prisma.memberFavorite.deleteMany({
-    where: { memberKey: demoMember.memberKey },
-  });
-  await prisma.memberPriceAlert.deleteMany({
-    where: { memberKey: demoMember.memberKey },
-  });
-  await prisma.memberReceipt.deleteMany({
-    where: { memberKey: demoMember.memberKey },
-  });
+async function seedPromotions() {
+  console.log("🤖 Calling Gemini for promotions data...");
 
-  await prisma.memberFavorite.createMany({
-    data: demoMember.favorites.map((favorite) => ({
-      memberKey: demoMember.memberKey,
-      scenarioId: favorite.scenarioId,
-      createdAt: favorite.createdAt,
-    })),
-  });
+  // Delete all existing records first (clears stale/invalid data)
+  const { error: delError } = await supabase
+    .from("promotions")
+    .delete()
+    .gte("fetched_at", "1970-01-01T00:00:00Z");
+  if (delError) throw new Error(`Delete promotions: ${delError.message}`);
+  console.log("   → Cleared existing promotions");
 
-  await prisma.memberPriceAlert.createMany({
-    data: demoMember.alerts.map((alert) => ({
-      id: alert.id,
-      memberKey: demoMember.memberKey,
-      scenarioId: alert.scenarioId,
-      platform: alert.platform,
-      targetPrice: alert.targetPrice,
-      enabled: alert.enabled,
-      createdAt: alert.createdAt,
-    })),
-  });
+  let records;
+  if (!GEMINI_KEY) {
+    console.log("   ⚠️  No Gemini key, using fallback data");
+    records = FALLBACK_PROMOTIONS;
+  } else {
+    const promotions = await callGemini();
+    if (promotions) {
+      const valid = promotions.filter((p) => VALID_PLATFORMS.includes(p.platform));
+      console.log(`   → Gemini returned ${promotions.length} total, ${valid.length} with valid platform`);
+      if (valid.length > 0) {
+        records = valid.map((p) => ({
+          platform:       p.platform,
+          campaign_name:  p.campaign_name,
+          promo_code:     p.promo_code    ?? null,
+          conditions:     p.conditions    ?? null,
+          start_date:     p.start_date    ?? null,
+          end_date:       p.end_date      ?? null,
+          reference_link: p.reference_url ?? null,
+        }));
+      } else {
+        console.log("   ⚠️  Gemini returned no valid platform data, using fallback");
+        records = FALLBACK_PROMOTIONS;
+      }
+    } else {
+      console.log("   ⚠️  All Gemini models quota exceeded, using fallback data");
+      records = FALLBACK_PROMOTIONS;
+    }
+  }
 
-  await prisma.memberReceipt.createMany({
-    data: demoMember.receipts.map((receipt) => ({
-      id: receipt.id,
-      memberKey: demoMember.memberKey,
-      fileName: receipt.fileName,
-      scenarioId: receipt.scenarioId,
-      platform: receipt.platform,
-      restaurant: receipt.restaurant,
-      itemName: receipt.itemName,
-      district: receipt.district,
-      totalPrice: receipt.totalPrice,
-      createdAt: receipt.createdAt,
-      verifiedAt: receipt.verifiedAt,
-      status: receipt.status,
-      pointsAwarded: receipt.pointsAwarded,
-    })),
-  });
+  const inserts = records.map((r) => ({ ...r, fetched_at: new Date().toISOString(), is_active: true }));
+  const { error } = await supabase.from("promotions").insert(inserts);
+  if (error) throw new Error(`Insert promotions: ${error.message}`);
+  console.log(`✅ Seeded ${inserts.length} promotions`);
 }
 
+async function seedRestaurants() {
+  console.log("🍽️  Seeding restaurants...");
+  const { error: delError } = await supabase
+    .from("restaurants")
+    .delete()
+    .gte("created_at", "1970-01-01T00:00:00Z");
+  if (delError) throw new Error(`Delete restaurants: ${delError.message}`);
+
+  const { error } = await supabase.from("restaurants").insert(RESTAURANTS);
+  if (error) throw new Error(`Insert restaurants: ${error.message}`);
+  console.log(`✅ Seeded ${RESTAURANTS.length} restaurants`);
+}
+
+// ── Main ─────────────────────────────────────────────────────
 async function main() {
-  await seedCompareScenarios();
-  await seedDemoMember();
+  console.log("\n🌱  MrHaveFood — Database Seed\n");
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env");
+  }
+
+  await seedPromotions();
+  await seedRestaurants();
+
+  console.log("\n🎉  Seed complete!\n");
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main().catch((err) => {
+  console.error("\n❌  Seed failed:", err.message, "\n");
+  process.exit(1);
+});

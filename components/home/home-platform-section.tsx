@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { platformMeta } from "@/lib/promotions-data";
@@ -53,6 +54,18 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
       className="w-full min-w-0 bg-(--brand-surface) px-3 py-8 sm:px-4 sm:py-12 lg:px-6"
     >
       <div className="mx-auto max-w-7xl space-y-3">
+        {/* Call to Action banner */}
+        <div className="overflow-hidden rounded-2xl">
+          <Image
+            src="/assets/Call2ActionMrHaveFood.png"
+            alt="MrHaveFood Call to Action"
+            width={2606}
+            height={246}
+            className="w-full object-cover"
+            style={{ height: "auto" }}
+          />
+        </div>
+
         <div>
           {(() => { const d = new Date(); return (
             <Badge variant="secondary" className="mb-1.5 bg-gray-100 text-gray-500 hover:bg-gray-100">
@@ -98,7 +111,7 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
 
         {/* Compact promo list */}
         <div className="space-y-1.5">
-          {promotions.slice(0, 8).map((promo) => {
+          {promotions.map((promo) => {
             const meta = platformMeta[promo.platform];
             if (!meta) return null;
 
