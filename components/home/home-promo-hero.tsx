@@ -180,17 +180,6 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
                     📅 {formatDateRange(slide.start_date, slide.end_date, slide.fetched_at)}
                   </p>
                 )}
-
-                {/* CTA */}
-                <a
-                  href={meta.webUrl}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="mt-4 inline-flex items-center rounded-full px-5 py-2 text-[13px] font-bold"
-                  style={{ backgroundColor: meta.color, color: "white" }}
-                >
-                  เปิด {slide.platform}
-                </a>
               </div>
 
               {/* Dots */}
