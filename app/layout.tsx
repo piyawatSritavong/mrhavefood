@@ -37,7 +37,7 @@ const organizationSchema = {
   "@type": "Organization",
   name: "MrHaveFood",
   url: "https://mrhavefood.com",
-  logo: "https://mrhavefood.com/faviconMrHaveFood.svg",
+  logo: "https://mrhavefood.com/favicon.svg",
   description:
     "MrHaveFood.com helps Thai food lovers compare delivery prices, verify truth with real receipts, and discover worth-it zones through a visual savings map.",
   sameAs: ["https://www.mrhavefood.com"],
@@ -80,8 +80,8 @@ export const metadata: Metadata = {
       "Compare smarter. Eat better. Pay less. A value-first food discovery layer for Thailand.",
   },
   icons: {
-    icon: "/faviconMrHaveFood.svg",
-    apple: "/faviconMrHaveFood.svg",
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   manifest: "/manifest.webmanifest",
 };
