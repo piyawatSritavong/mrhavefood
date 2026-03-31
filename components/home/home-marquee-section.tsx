@@ -15,9 +15,9 @@ const MESSAGES = [
 const items = Array(4).fill(MESSAGES).flat();
 
 export function HomeMarqueeSection() {
-  const [duration, setDuration] = useState(30);
+  const [duration, setDuration] = useState(18);
   useEffect(() => {
-    const update = () => setDuration(window.innerWidth < 768 ? 20 : 30);
+    const update = () => setDuration(window.innerWidth < 768 ? 10 : 18);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -26,6 +26,7 @@ export function HomeMarqueeSection() {
   return (
     <section className="w-full overflow-hidden py-3" style={{ background: "linear-gradient(to right, #dd722c, #0369a1, #00437c)" }}>
       <motion.div
+        key={duration}
         className="flex whitespace-nowrap"
         animate={{ x: ["0%", "-50%"] }}
         transition={{

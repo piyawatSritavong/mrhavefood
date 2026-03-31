@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useAnimationFrame } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { platformMeta } from "@/lib/promotions-data";
 import type { Promotion } from "@/lib/supabase";
@@ -27,6 +27,52 @@ function formatDateRange(start: string | null, end: string | null): string | nul
 }
 
 
+function AdBannerScroll({ adDuration }: { adDuration: number }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const isDragging = useRef(false);
+  const lastTs = useRef<number | null>(null);
+
+  useAnimationFrame((ts) => {
+    if (isDragging.current) return;
+    const track = trackRef.current;
+    if (!track) return;
+    if (lastTs.current === null) { lastTs.current = ts; return; }
+    const delta = ts - lastTs.current;
+    lastTs.current = ts;
+    const unit = track.scrollWidth / 8;
+    const speed = unit / (adDuration * 1000);
+    let next = x.get() - delta * speed;
+    if (next <= -unit) next += unit;
+    x.set(next);
+  });
+
+  return (
+    <motion.div
+      ref={trackRef}
+      style={{ x }}
+      className="flex gap-8 cursor-grab active:cursor-grabbing select-none touch-pan-y"
+      drag="x"
+      dragConstraints={{ left: -400, right: 400 }}
+      dragMomentum={true}
+      dragElastic={0.08}
+      onDragStart={() => { isDragging.current = true; lastTs.current = null; }}
+      onDragEnd={() => { isDragging.current = false; }}
+    >
+      {Array(8).fill(null).map((_, i) => (
+        <Image
+          key={i}
+          src="/assets/miniAds.png"
+          alt="MrHaveFood Ads"
+          width={800}
+          height={120}
+          className="h-20 w-auto shrink-0 object-cover"
+        />
+      ))}
+    </motion.div>
+  );
+}
+
 const platformAbbr: Record<string, string> = {
   GrabFood: "GF",
   "LINE MAN": "LM",
@@ -35,9 +81,9 @@ const platformAbbr: Record<string, string> = {
 };
 
 export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
-  const [adDuration, setAdDuration] = useState(25);
+  const [adDuration, setAdDuration] = useState(15);
   useEffect(() => {
-    const update = () => setAdDuration(window.innerWidth < 768 ? 16 : 25);
+    const update = () => setAdDuration(window.innerWidth < 768 ? 10 : 15);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -83,22 +129,7 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
               <div key={promo.id}>
                 {showAd && (
                   <div className="overflow-hidden rounded-xl my-2 border border-dashed border-[#e3dddd]">
-                    <motion.div
-                      className="flex gap-8"
-                      animate={{ x: ["0%", "-12.5%"] }}
-                      transition={{ duration: adDuration, ease: "linear", repeat: Infinity }}
-                    >
-                      {Array(8).fill(null).map((_, i) => (
-                        <Image
-                          key={i}
-                          src="/assets/miniAds.png"
-                          alt="MrHaveFood Ads"
-                          width={800}
-                          height={120}
-                          className="h-20 w-auto shrink-0 object-cover"
-                        />
-                      ))}
-                    </motion.div>
+                    <AdBannerScroll adDuration={adDuration} />
                   </div>
                 )}
                 {meta && (
