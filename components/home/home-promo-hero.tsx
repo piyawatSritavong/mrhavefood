@@ -213,7 +213,10 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    document.getElementById("platforms")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
                   className="flex min-w-15 flex-col items-center gap-2"
                 >
                   <div
