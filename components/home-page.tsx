@@ -1,4 +1,5 @@
 import { HomeFooterSection } from "@/components/home/home-footer-section";
+import { HomeMarqueeSection } from "@/components/home/home-marquee-section";
 import { HomePromoHero } from "@/components/home/home-promo-hero";
 import { HomePlatformSection } from "@/components/home/home-platform-section";
 import { HomeRestaurantsSection } from "@/components/home/home-restaurants-section";
@@ -16,7 +17,8 @@ export function HomePage({ promotions, restaurants }: HomePageProps) {
     <HomeShell>
       <HomePromoHero promotions={promotions} />
       <HomePlatformSection promotions={promotions} />
-      <HomeRestaurantsSection restaurants={restaurants} />
+      <HomeMarqueeSection />
+      <HomeRestaurantsSection />
       <HomeFooterSection />
     </HomeShell>
   );

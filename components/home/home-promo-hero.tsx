@@ -216,7 +216,7 @@ export function HomePromoHero({ promotions }: HomePromoHeroProps) {
         <div className="mx-auto max-w-7xl">
           <Badge variant="secondary" className="mb-1.5">{thaiDays[new Date().getDay()]}</Badge>
           <h1 className="mb-2 font-display text-base font-bold text-(--brand-primary)">
-            กินอะไรดี มีโปรวันนี้ ?
+            วันนี้กินอะไรดี ?
           </h1>
           <div className="flex gap-3 overflow-x-auto pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {foodCategories.map((cat) => {

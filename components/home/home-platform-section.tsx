@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { platformMeta } from "@/lib/promotions-data";
 import type { Promotion } from "@/lib/supabase";
@@ -26,7 +26,6 @@ function formatDateRange(start: string | null, end: string | null): string | nul
   return fmtDate(end!);
 }
 
-const platformOrder = ["GrabFood", "LINE MAN", "ShopeeFood", "Robinhood"];
 
 const platformAbbr: Record<string, string> = {
   GrabFood: "GF",
@@ -36,15 +35,12 @@ const platformAbbr: Record<string, string> = {
 };
 
 export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
-  const grouped = platformOrder.reduce<Record<string, Promotion[]>>((acc, platform) => {
-    acc[platform] = promotions.filter((p) => p.platform === platform);
-    return acc;
-  }, {});
-
-  const [tick, setTick] = useState(0);
+  const [adDuration, setAdDuration] = useState(25);
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 3000);
-    return () => clearInterval(id);
+    const update = () => setAdDuration(window.innerWidth < 768 ? 16 : 25);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   return (
@@ -77,84 +73,74 @@ export function HomePlatformSection({ promotions }: HomePlatformSectionProps) {
           </h2>
         </div>
 
-        {/* 2×2 feature cards → 4-col on desktop */}
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {platformOrder.map((platform) => {
-            const meta = platformMeta[platform];
-            const items = grouped[platform] ?? [];
-            if (!meta) return null;
-
-            return (
-              <a
-                key={platform}
-                href={meta.webUrl}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="flex flex-col gap-1.5 rounded-xl p-3 transition-opacity hover:opacity-80"
-                style={{ backgroundColor: meta.bg }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: meta.color }} />
-                    <p className="text-[11px] font-bold" style={{ color: meta.color }}>{platform}</p>
-                  </div>
-                  <ArrowRightIcon className="size-3 opacity-40" />
-                </div>
-                <p className="text-[11px] font-semibold leading-4" style={{ color: meta.textColor }}>
-                  {items.length > 0 ? items[tick % items.length].campaign_name : "ยังไม่มีโปรวันนี้"}
-                </p>
-                <p className="text-[10px] text-[#9aa5b1]">{items.length} โปรโมชั่น</p>
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Compact promo list */}
+        {/* Compact promo list with ad banners every 7 items */}
         <div className="space-y-1.5">
-          {promotions.map((promo) => {
+          {promotions.map((promo, index) => {
             const meta = platformMeta[promo.platform];
-            if (!meta) return null;
+            const showAd = index > 0 && index % 7 === 0;
 
             return (
-              <a
-                key={promo.id}
-                href={meta.webUrl}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="flex items-center gap-3 rounded-xl border border-[#ebe7e7] bg-white p-2.5"
-              >
-                <div
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: meta.bg }}
-                >
-                  <span className="font-display text-[10px] font-black" style={{ color: meta.color }}>
-                    {platformAbbr[promo.platform] ?? promo.platform.slice(0, 2)}
-                  </span>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-(--brand-primary)">{promo.campaign_name}</p>
-                  {promo.conditions && (
-                    <p className="mt-0.5 text-[11px] text-[#5c6e7f]">{promo.conditions}</p>
-                  )}
-                  <div className="mt-1.5 flex items-end justify-between gap-2">
-                    <Badge variant="secondary" className="whitespace-nowrap text-[10px] text-[#9aa5b1]">
-                      {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
-                    </Badge>
-                    {promo.promo_code &&
-                      promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
-                      promo.promo_code !== "เก็บคูปองในแอป" && (
-                        <Badge
-                          variant="outline"
-                          className="font-mono text-[10px] font-bold tracking-wider"
-                          style={{ borderColor: meta.color, color: meta.color }}
-                        >
-                          {promo.promo_code}
-                        </Badge>
-                      )}
+              <div key={promo.id}>
+                {showAd && (
+                  <div className="overflow-hidden rounded-xl my-2 border border-dashed border-[#e3dddd]">
+                    <motion.div
+                      className="flex gap-8"
+                      animate={{ x: ["0%", "-12.5%"] }}
+                      transition={{ duration: adDuration, ease: "linear", repeat: Infinity }}
+                    >
+                      {Array(8).fill(null).map((_, i) => (
+                        <Image
+                          key={i}
+                          src="/assets/miniAds.png"
+                          alt="MrHaveFood Ads"
+                          width={800}
+                          height={120}
+                          className="h-20 w-auto shrink-0 object-cover"
+                        />
+                      ))}
+                    </motion.div>
                   </div>
-                </div>
-              </a>
+                )}
+                {meta && (
+                  <a
+                    href={meta.webUrl}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="flex items-center gap-3 rounded-xl border border-[#ebe7e7] bg-white p-2.5"
+                  >
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: meta.bg }}
+                    >
+                      <span className="font-display text-[10px] font-black" style={{ color: meta.color }}>
+                        {platformAbbr[promo.platform] ?? promo.platform.slice(0, 2)}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-(--brand-primary)">{promo.campaign_name}</p>
+                      {promo.conditions && (
+                        <p className="mt-0.5 text-[11px] text-[#5c6e7f]">{promo.conditions}</p>
+                      )}
+                      <div className="mt-1.5 flex items-end justify-between gap-2">
+                        <Badge variant="secondary" className="whitespace-nowrap text-[10px] text-[#9aa5b1]">
+                          {formatDateRange(promo.start_date, promo.end_date) ?? fmtDate(promo.fetched_at)}
+                        </Badge>
+                        {promo.promo_code &&
+                          promo.promo_code !== "ลดอัตโนมัติ ไม่ต้องใช้รหัส" &&
+                          promo.promo_code !== "เก็บคูปองในแอป" && (
+                            <Badge
+                              variant="outline"
+                              className="font-mono text-[10px] font-bold tracking-wider"
+                              style={{ borderColor: meta.color, color: meta.color }}
+                            >
+                              {promo.promo_code}
+                            </Badge>
+                          )}
+                      </div>
+                    </div>
+                  </a>
+                )}
+              </div>
             );
           })}
         </div>
