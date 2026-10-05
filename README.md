@@ -1,95 +1,57 @@
 # MrHaveFood.com
 
-Smart Layer for Savvy Eaters.
+รวมโค้ดส่วนลดส่งอาหาร GrabFood · LINE MAN · ShopeeFood · Robinhood ไว้ที่เดียว
 
-This project is a full `Next.js` foundation for `MrHaveFood.com`, designed around:
+Live: https://www.mrhavefood.com
 
-- Meta-price comparison across major delivery apps
-- Receipt-driven truth with AI/OCR verification
-- Visual worth-it heatmap for each district
-- A phased roadmap from SEO wedge to retention and monetization
+## What it does
+
+- **Promotions** — daily list of active promo codes from the four delivery platforms, searchable, with copy-code buttons. Data lives in the Supabase `promotions` table and is refreshed by `/api/promotions/fetch` (Gemini + Google Search).
+- **Mr.AI chat** — floating assistant backed by Gemini (`/api/chat`), rate limited per IP.
+- **Restaurant partners** — `/register-restaurant` saves sign-ups to `restaurant_applications`; approved restaurants are shown from the `restaurants` table and order through their LINE OA.
 
 ## Stack
 
-- `Next.js 16` with App Router
-- `Tailwind CSS 4`
-- `TypeScript`
-- `Zustand`
-- `Auth.js / next-auth`
-- `Prisma`
-- `Supabase Postgres`
-- `next/font`
-- `manifest.webmanifest` for PWA groundwork
+Next.js 16 (App Router) · Tailwind CSS 4 · TypeScript · Zustand · Supabase · Gemini (`@google/generative-ai`) · framer-motion
 
-## Local development
+Design tokens (color, fonts, radius, shadow) are defined once in `app/globals.css`; components use the generated utilities (`bg-surface`, `text-ink-muted`, `border-border`, `shadow-card` …) instead of hex values.
+
+## Environment
+
+Copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Used by |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | all Supabase access |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | reserved for client reads |
+| `SUPABASE_SERVICE_ROLE_KEY` | server reads/writes (never expose) |
+| `GEMINI_CHAT_API_KEY` | `/api/chat` |
+| `GEMINI_PROMOTIONS_API_KEY` | `/api/promotions/fetch` |
+| `CRON_SECRET` | required `Authorization: Bearer` token for `/api/promotions/fetch` |
+| `DATABASE_URL` | Prisma scripts only |
+
+## Database setup
+
+Run `supabase/restaurant_applications.sql` once in the Supabase SQL editor to create the registration table (RLS on, server-only access). The `promotions` / `restaurants` table definitions are in `lib/supabase.ts`.
+
+## Refreshing promotions
+
+```bash
+curl -X POST https://www.mrhavefood.com/api/promotions/fetch -H "Authorization: Bearer $CRON_SECRET"
+```
+
+To automate it, add a Vercel Cron job pointing at `/api/promotions/fetch` (Vercel sends `CRON_SECRET` as the bearer token on GET).
+
+## Development
 
 ```bash
 npm install
-npm run db:generate
 npm run dev
 ```
 
-The development script uses `webpack` because this environment cannot use Turbopack native bindings reliably.
-
-## Production build
+`dev` and `build` use webpack (`--webpack`).
 
 ```bash
 npm run build
 npm start
 ```
-
-## Authentication
-
-Auth.js foundation is wired with:
-
-- `next-auth` route handler at `app/api/auth/[...nextauth]/route.ts`
-- custom sign-in page at `/sign-in`
-- protected member page at `/member`
-- optional Google OAuth via env vars
-- demo credentials flow for local prototype testing
-
-## Database
-
-Member persistence is backed by Supabase Postgres through Prisma, and the current schema now uses normalized tables for:
-
-- compare scenarios and platform offers
-- member profiles
-- favorites
-- price alerts
-- receipt submissions
-
-This repo now uses a single local env file: `.env`
-
-Run migration and seed with:
-
-```bash
-npm run db:migrate
-npm run db:seed
-```
-
-Demo member credentials default to:
-
-```bash
-member@mrhavefood.com
-mrhavefood-demo
-```
-
-## Current scope
-
-The current implementation includes:
-
-- A cinematic landing page with full-page scrolling sections
-- Branded visual system inspired by the provided reference
-- Sections for vision, compare, receipt truth, heatmap, ecosystem, and roadmap
-- SEO compare routes and dynamic compare detail pages
-- Authenticated member area with Supabase-backed favorites, alerts, points, and receipt history
-- Prisma migration and seed flow for Supabase mock data
-- SEO metadata and manifest basics for future PWA expansion
-
-## Suggested next steps
-
-1. Split the homepage into reusable components under `components/`
-2. Replace UI compare routes to read from Supabase instead of in-file mock data
-3. Add receipt upload API, OCR processing, and moderation queues
-4. Build merchant and platform dashboards as authenticated routes
-5. Add affiliate link tracking and price-drop jobs

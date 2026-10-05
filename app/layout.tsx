@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Kanit, Mitr, Prompt } from "next/font/google";
-import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
+import { Inter, Kanit, Prompt } from "next/font/google";
 import { FloatingAIButton } from "@/components/floating-ai-button";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
   display: "swap",
 });
@@ -18,16 +18,9 @@ const kanit = Kanit({
   display: "swap",
 });
 
-const mitr = Mitr({
-  subsets: ["thai", "latin"],
-  weight: ["500"],
-  variable: "--font-mitr",
-  display: "swap",
-});
-
 const prompt = Prompt({
-  subsets: ["thai", "latin"],
-  weight: ["400"],
+  subsets: ["thai"],
+  weight: ["400", "600", "700"],
   variable: "--font-prompt",
   display: "swap",
 });
@@ -35,69 +28,57 @@ const prompt = Prompt({
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "MrHaveFood",
-  url: "https://mrhavefood.com",
-  logo: "https://mrhavefood.com/icon.svg",
-  description:
-    "MrHaveFood.com helps Thai food lovers compare delivery prices, verify truth with real receipts, and discover worth-it zones through a visual savings map.",
-  sameAs: ["https://www.mrhavefood.com"],
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon-512.png`,
+  description: SITE_DESCRIPTION,
 };
 
+const title = `${SITE_NAME} — ${SITE_TITLE}`;
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mrhavefood.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "MrHaveFood — เปรียบราคาส่งอาหาร ทุกแพลตฟอร์ม ในไทย",
-    template: "%s | MrHaveFood",
+    default: title,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "MrHaveFood.com helps Thai food lovers compare delivery prices, verify truth with real receipts, and discover worth-it zones through a visual savings map.",
-  applicationName: "MrHaveFood.com",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   keywords: [
+    "โค้ดส่วนลด GrabFood",
+    "โค้ด LINE MAN",
+    "โปร ShopeeFood",
+    "โปร Robinhood",
+    "โปรโมชั่นส่งอาหาร",
     "MrHaveFood",
-    "food price comparison",
-    "delivery comparison Thailand",
-    "receipt OCR food review",
-    "worth-it heatmap",
-    "Bangkok food deals",
   ],
-  authors: [{ name: "MrHaveFood" }],
+  authors: [{ name: SITE_NAME }],
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "MrHaveFood.com | Smart Layer for Savvy Eaters",
-    description:
-      "Compare food delivery prices, verify reviews with real receipts, and find the most worth-it meals in each district.",
-    url: "https://mrhavefood.com",
-    siteName: "MrHaveFood.com",
+    title,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    siteName: SITE_NAME,
     type: "website",
     locale: "th_TH",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MrHaveFood.com",
-    description:
-      "Compare smarter. Eat better. Pay less. A value-first food discovery layer for Thailand.",
+    title,
+    description: SITE_DESCRIPTION,
   },
   manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f0e1",
-  colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f4eeee",
+  colorScheme: "light",
 };
-
-const themeBootScript = `
-(() => {
-  try {
-    const storedTheme = window.localStorage.getItem("mr-have-food-theme");
-    const theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : "light";
-    document.documentElement.dataset.theme = theme;
-  } catch (error) {
-    document.documentElement.dataset.theme = "light";
-  }
-})();
-`;
 
 export default function RootLayout({
   children,
@@ -107,22 +88,17 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className={`scroll-smooth ${inter.variable} ${kanit.variable} ${mitr.variable} ${prompt.variable}`}
-      data-theme="light"
-      suppressHydrationWarning
+      className={`${inter.variable} ${kanit.variable} ${prompt.variable}`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <AuthSessionProvider>
-          {children}
-          <FloatingAIButton />
-        </AuthSessionProvider>
+        {children}
+        <FloatingAIButton />
       </body>
     </html>
   );

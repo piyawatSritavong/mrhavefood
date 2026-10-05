@@ -4,7 +4,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 
-import { AuthNavActions } from "@/components/auth/auth-nav-actions";
+import { HeaderCta } from "@/components/home/header-cta";
 import { cn } from "@/lib/utils";
 import { navItems, type SectionId } from "@/lib/home-content";
 import { useHomeStore } from "@/lib/stores/use-home-store";
@@ -92,8 +92,6 @@ export function HomeShell({
     };
   }, [setActiveSection]);
 
-  const isHero = false;
-
   const handleNavClick = (
     event: MouseEvent<HTMLAnchorElement>,
     section: SectionId,
@@ -114,54 +112,70 @@ export function HomeShell({
     window.history.replaceState(null, "", `#${section}`);
   };
 
+  const navLinkClass = (section: SectionId) =>
+    cn(
+      "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors duration-300",
+      activeSection === section
+        ? "bg-surface-brand text-brand-primary"
+        : "text-ink-secondary hover:bg-surface-brand hover:text-brand-primary",
+    );
+
   return (
     <div
       ref={scrollContainerRef}
-      className="relative h-dvh overflow-x-hidden overflow-y-auto bg-white scroll-smooth scroll-pt-16"
+      className="relative h-dvh overflow-x-hidden overflow-y-auto bg-surface scroll-smooth scroll-pt-36 lg:scroll-pt-24"
     >
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 px-4 py-4 sm:px-6 lg:px-8"
+        className="sticky top-0 z-40 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 lg:px-8 lg:py-4"
       >
-        <div className={cn(
-          "mx-auto flex max-w-7xl items-center justify-between gap-2 rounded-3xl border px-3 py-2 backdrop-blur-md transition-all duration-300 sm:gap-4 sm:px-4 sm:py-3",
-          isHero
-            ? "border-white/15 bg-white/10"
-            : "border-[#e3dddd] bg-white/95 shadow-[0_8px_30px_rgba(0,67,124,0.08)]",
-        )}>
-          <a
-            href="#main"
-            onClick={(event) => handleNavClick(event, "main")}
-            className="flex items-center"
-          >
-            <Image
-              src="/assets/logoMrHaveFood.png"
-              alt="MrHaveFood"
-              width={160}
-              height={52}
-              className="object-contain"
-              style={{ height: "3rem", width: "auto" }}
-              priority
-            />
-          </a>
+        <div className="mx-auto max-w-7xl rounded-panel border border-border bg-surface/95 px-3 py-2 shadow-card backdrop-blur-md sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <a
+              href="#main"
+              onClick={(event) => handleNavClick(event, "main")}
+              className="flex min-h-11 items-center"
+            >
+              <Image
+                src="/assets/logo.webp"
+                alt="MrHaveFood หน้าแรก"
+                width={360}
+                height={191}
+                className="h-12 w-auto object-contain"
+                priority
+              />
+            </a>
 
-          <nav aria-label="Primary" className="hidden lg:block">
-            <ol className="flex items-center gap-2">
+            <nav aria-label="เมนูหลัก" className="hidden lg:block">
+              <ol className="flex items-center gap-2">
+                {navItems.map((item) => (
+                  <li key={item.href}>
+                    <a
+                      href={item.href}
+                      onClick={(event) => handleNavClick(event, item.section)}
+                      aria-current={activeSection === item.section ? "location" : undefined}
+                      className={navLinkClass(item.section)}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+
+            <HeaderCta />
+          </div>
+
+          {/* Mobile section links */}
+          <nav aria-label="เมนูหลัก (มือถือ)" className="-mx-1 mt-1 overflow-x-auto [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
+            <ol className="flex items-center gap-1">
               {navItems.map((item) => (
                 <li key={item.href}>
                   <a
                     href={item.href}
                     onClick={(event) => handleNavClick(event, item.section)}
-                    aria-current={activeSection === item.section ? "page" : undefined}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-300",
-                      isHero
-                        ? "text-white! hover:bg-white/10"
-                        : "text-[#45627a] hover:bg-[#edf4fb] hover:text-(--brand-primary)",
-                      activeSection === item.section && (
-                        isHero ? "bg-white/15 text-white!" : "bg-[#edf4fb] text-(--brand-primary)"
-                      ),
-                    )}
+                    aria-current={activeSection === item.section ? "location" : undefined}
+                    className={navLinkClass(item.section)}
                   >
                     {item.label}
                   </a>
@@ -169,10 +183,6 @@ export function HomeShell({
               ))}
             </ol>
           </nav>
-
-          <div className="flex items-center gap-2">
-            <AuthNavActions />
-          </div>
         </div>
       </header>
 
