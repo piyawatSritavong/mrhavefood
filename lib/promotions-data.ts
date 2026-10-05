@@ -1,35 +1,56 @@
 import type { Promotion } from "@/lib/supabase";
 
-export const platformMeta: Record<string, { color: string; bg: string; textColor: string; appUrl: string; webUrl: string }> = {
-  GrabFood: {
-    color: "#00B14F",
-    bg: "#f0fdf4",
-    textColor: "#166534",
-    appUrl: "grab://food",
-    webUrl: "https://food.grab.com/th/en/",
-  },
-  "LINE MAN": {
-    color: "#00C300",
-    bg: "#f0fdf9",
-    textColor: "#065f46",
-    appUrl: "https://liff.line.me/1654046602-oR3JNKQ1",
-    webUrl: "https://lineman.line.me/",
-  },
-  ShopeeFood: {
-    color: "#EE4D2D",
-    bg: "#fff1ee",
-    textColor: "#9a3412",
-    appUrl: "shopeefood://",
-    webUrl: "https://shopee.co.th/m/shopeefood",
-  },
-  Robinhood: {
-    color: "#4A148C",
-    bg: "#faf5ff",
-    textColor: "#6b21a8",
-    appUrl: "robinhood://",
-    webUrl: "https://www.robinhood.co.th/",
-  },
+export type PlatformMeta = {
+  label: string;
+  abbr: string;
+  /** Brand color of the delivery platform (third-party brand, not our palette). */
+  color: string;
+  webUrl: string;
 };
+
+// Single source for platform brand colors and links.
+export const platformMeta: Record<string, PlatformMeta> = {
+  GrabFood: { label: "GrabFood", abbr: "GF", color: "#00B14F", webUrl: "https://food.grab.com/th/th/" },
+  "LINE MAN": { label: "LINE MAN", abbr: "LM", color: "#00C300", webUrl: "https://lineman.line.me/" },
+  ShopeeFood: { label: "ShopeeFood", abbr: "SF", color: "#EE4D2D", webUrl: "https://shopee.co.th/m/shopeefood" },
+  Robinhood: { label: "Robinhood", abbr: "RH", color: "#4A148C", webUrl: "https://www.robinhood.co.th/" },
+};
+
+export function getPlatformMeta(platform: string): PlatformMeta {
+  return (
+    platformMeta[platform] ?? {
+      label: platform,
+      abbr: platform.slice(0, 2).toUpperCase(),
+      color: "var(--brand-primary)",
+      webUrl: "",
+    }
+  );
+}
+
+/** Tinted background for a platform color, e.g. badge fills. */
+export function platformTint(color: string, percent: number): string {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
+const NON_CODE_VALUES = new Set(["ลดอัตโนมัติ ไม่ต้องใช้รหัส", "เก็บคูปองในแอป"]);
+
+/** True when promo_code is an actual code a user can type or copy. */
+export function isRealPromoCode(code: string | null): code is string {
+  return Boolean(code) && !NON_CODE_VALUES.has(code as string);
+}
+
+export function promoHref(promo: Promotion): string | null {
+  return promo.reference_link || getPlatformMeta(promo.platform).webUrl || null;
+}
+
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+/** Drop inactive or expired promotions (end_date before today). */
+export function filterActivePromotions(list: Promotion[], today = todayISO()): Promotion[] {
+  return list.filter((p) => p.is_active && (!p.end_date || p.end_date >= today));
+}
 
 export const fallbackPromotions: Promotion[] = [
   {
@@ -127,38 +148,5 @@ export const fallbackPromotions: Promotion[] = [
     reference_link: "https://www.robinhood.co.th/",
     fetched_at: new Date().toISOString(),
     is_active: true,
-  },
-];
-
-export const fallbackRestaurants = [
-  {
-    id: "r1",
-    name: "กะเพราตาแป๊ะ",
-    category: "อาหารไทย",
-    image_url: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-    line_oa_url: "https://line.me/ti/p/@mrhavefood",
-    description: "กะเพราหมูกรอบเทพ การันตีความอร่อย สั่งตรงจากร้าน ไม่เสียค่า GP",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "r2",
-    name: "ข้าวมันไก่ต้นตำรับ",
-    category: "อาหารจีน",
-    image_url: "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-    line_oa_url: "https://line.me/ti/p/@mrhavefood",
-    description: "ข้าวมันไก่ต้นตำรับสูตรโบราณ น้ำซุปใสหวาน ราคาหน้าร้าน ไม่บวก GP",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "r3",
-    name: "ยำแซ่บซอย",
-    category: "อาหารอีสาน",
-    image_url: "https://images.pexels.com/photos/2673353/pexels-photo-2673353.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-    line_oa_url: "https://line.me/ti/p/@mrhavefood",
-    description: "ยำตำรับอีสานแท้ รสแซ่บเผ็ดร้อน สั่งผ่าน LINE ได้เลย ไม่มีค่าธรรมเนียม",
-    is_active: true,
-    created_at: new Date().toISOString(),
   },
 ];

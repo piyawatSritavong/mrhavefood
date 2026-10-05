@@ -1,14 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Server-side client with service role key (for admin operations)
+// Server-only client with the service role key (bypasses RLS).
+// Never import this from a client component.
 export function createSupabaseAdmin() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  return createClient(supabaseUrl, serviceKey);
+  return createClient(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    { auth: { persistSession: false } },
+  );
 }
 
 export type Promotion = {
@@ -61,4 +68,6 @@ CREATE TABLE restaurants (
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- restaurant_applications: see supabase/restaurant_applications.sql
 */

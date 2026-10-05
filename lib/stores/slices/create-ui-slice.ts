@@ -10,4 +10,8 @@ export const createUISlice: StateCreator<
 > = (set) => ({
   activeSection: "main",
   setActiveSection: (activeSection) => set({ activeSection }),
+  searchQuery: "",
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  chatOpen: false,
+  setChatOpen: (chatOpen) => set({ chatOpen }),
 });

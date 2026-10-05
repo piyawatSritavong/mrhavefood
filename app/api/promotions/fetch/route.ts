@@ -1,19 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const VALID_PLATFORMS = ["GrabFood", "LINE MAN", "ShopeeFood", "Robinhood"];
-
-const FALLBACK_RECORDS = [
-  { platform: "GrabFood",   campaign_name: "GSB Debit Card Exclusive",     promo_code: "GSB100",     conditions: "สั่งขั้นต่ำ 300 บาท, ชำระผ่าน GrabPay ด้วยบัตรเดบิต GSB, จำกัด 2 สิทธิ์/คน/เดือน", start_date: "2026-01-01", end_date: "2026-12-31", reference_link: "https://www.grab.com/th/en/blog/gsb_y2026/" },
-  { platform: "GrabFood",   campaign_name: "KBank Credit Card Promotion",  promo_code: "KBANKGF",    conditions: "สั่งขั้นต่ำ 500 บาท, ชำระผ่าน GrabPay ด้วยบัตรเครดิต KBank ที่ร่วมรายการ, จำกัด 1 สิทธิ์/คน/เดือน", start_date: "2026-03-01", end_date: "2027-02-28", reference_link: "https://www.grab.com/th/en/blog/kbankgf_2026/" },
-  { platform: "LINE MAN",   campaign_name: "KTC VISA Foodie",              promo_code: "KTCVSPD80",  conditions: "สั่งขั้นต่ำ 450 บาท (เฉพาะค่าอาหาร), ชำระผ่านบัตรเครดิต KTC VISA เท่านั้น", start_date: "2026-02-01", end_date: "2026-07-31", reference_link: "https://lineman.line.me/partnership-ktc/" },
-  { platform: "LINE MAN",   campaign_name: "Rabbit Rewards Special",       promo_code: "แลกรับ Rabbit Rewards", conditions: "สั่งขั้นต่ำ 200 บาท, ใช้ได้เฉพาะร้านที่ร่วมรายการ (GP), จำกัด 1 รหัส/สิทธิ์", start_date: "2025-09-16", end_date: "2026-03-31", reference_link: "https://rewards.rabbit.co.th/" },
-  { platform: "LINE MAN",   campaign_name: "LINE MAN MART x Big C",        promo_code: "BIGC200",    conditions: "ช้อปขั้นต่ำ 800 บาท ที่ Big C ผ่านบริการ LINE MAN MART", start_date: "2026-03-01", end_date: "2026-03-31", reference_link: "https://lineman.line.me/how-to-apply-promo-code-2/" },
-  { platform: "ShopeeFood", campaign_name: "ShopeeFood x KFC New User",    promo_code: "เก็บคูปองในแอป", conditions: "เฉพาะลูกค้าใหม่, ไม่มีขั้นต่ำ, ใช้ได้กับเมนูที่ร่วมรายการ", start_date: null, end_date: null, reference_link: "https://promotion.thairath.co.th/shopee-food-coupons/" },
-  { platform: "ShopeeFood", campaign_name: "ShopeeFood x McDonald's",      promo_code: null,         conditions: "สำหรับทุกผู้ใช้, เฉพาะเมนูเซ็ตที่ร่วมรายการ, ไม่มีขั้นต่ำ", start_date: null, end_date: null, reference_link: "https://promotion.thairath.co.th/shopee-food-coupons/" },
-  { platform: "Robinhood",  campaign_name: "Robinhood Food (Current Status)", promo_code: null,      conditions: "ตรวจสอบราคาพิเศษได้ที่หน้าแอปพลิเคชันในส่วน 'ดีลดีร้านดัง'", start_date: "2026-03-01", end_date: "2026-12-31", reference_link: "https://www.robinhood.co.th/" },
-];
-
 
 function buildPrompt(): string {
   return `ให้คุณเป็นผู้เชี่ยวชาญด้านการวิเคราะห์ตลาดและข้อมูลโปรโมชั่นอาหารเดลิเวอรี่ในประเทศไทย (Thailand Food Delivery Market Analyst)
@@ -41,14 +29,43 @@ function parseJSON(text: string): unknown[] {
   return JSON.parse(cleaned);
 }
 
-export async function POST() {
-  const apiKey = process.env.GEMINI_PROMOTIONS_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "GEMINI_PROMOTIONS_API_KEY is not set" }, { status: 500 });
+function isAuthorized(req: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  return req.headers.get("authorization") === `Bearer ${secret}`;
+}
+
+type GeminiPromotion = {
+  platform: string;
+  campaign_name: string;
+  promo_code: string | null;
+  conditions: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  reference_url: string | null;
+};
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const asDate = (v: unknown) => (typeof v === "string" && ISO_DATE.test(v) ? v : null);
+const asText = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+const asUrl = (v: unknown) => (typeof v === "string" && /^https?:\/\//.test(v) ? v : null);
+
+// Refreshes the promotions table from Gemini + Google Search.
+// Protected by CRON_SECRET (Vercel Cron sends it as a Bearer token on GET).
+async function refreshPromotions(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const apiKey = process.env.GEMINI_PROMOTIONS_API_KEY;
+  if (!apiKey) {
+    console.error("[api/promotions/fetch] GEMINI_PROMOTIONS_API_KEY is not configured");
+    return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
+  }
+
+  // 1. Ask Gemini. Any failure here leaves the existing rows untouched.
+  let valid: GeminiPromotion[];
   try {
-    // 1. Call Gemini
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent({
@@ -56,55 +73,54 @@ export async function POST() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: [{ googleSearch: {} }] as any,
     });
-    const raw = result.response.text();
+    const parsed = parseJSON(result.response.text());
+    valid = (Array.isArray(parsed) ? parsed : [])
+      .filter((p): p is GeminiPromotion => !!p && typeof p === "object" && VALID_PLATFORMS.includes((p as GeminiPromotion).platform))
+      .filter((p) => asText(p.campaign_name));
+  } catch (err) {
+    console.error("[api/promotions/fetch] Gemini request or parsing failed:", err);
+    return NextResponse.json({ error: "upstream_error" }, { status: 502 });
+  }
 
-    // 2. Parse JSON
-    const promotions = parseJSON(raw) as Array<{
-      platform: string;
-      campaign_name: string;
-      promo_code: string | null;
-      conditions: string | null;
-      start_date: string | null;
-      end_date: string | null;
-      reference_url: string | null;
-    }>;
+  if (valid.length === 0) {
+    console.warn("[api/promotions/fetch] Gemini returned no usable promotions; keeping existing rows");
+    return NextResponse.json({ error: "no_results" }, { status: 502 });
+  }
 
-    // 3. Validate platform names — Gemini sometimes returns error-like records
-    const validFromGemini = promotions.filter((p) => VALID_PLATFORMS.includes(p.platform));
-
-    // 4. Supabase — delete ALL existing then insert fresh
+  // 2. Insert the new batch first, then delete the older rows, so a failed
+  //    insert never leaves the table empty.
+  try {
     const { createSupabaseAdmin } = await import("@/lib/supabase");
     const supabase = createSupabaseAdmin();
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const batchTime = new Date().toISOString();
 
-    await supabase.from("promotions").delete().gte("fetched_at", "1970-01-01T00:00:00Z");
+    const records = valid.map((p) => ({
+      platform: p.platform,
+      campaign_name: asText(p.campaign_name) as string,
+      promo_code: asText(p.promo_code),
+      conditions: asText(p.conditions),
+      start_date: asDate(p.start_date),
+      end_date: asDate(p.end_date),
+      reference_link: asUrl(p.reference_url),
+      fetched_at: batchTime,
+      is_active: true,
+    }));
 
-    // 5. Use Gemini data if valid, otherwise fallback
-    const source = validFromGemini.length > 0 ? "gemini" : "fallback";
-    const cleanRecords =
-      validFromGemini.length > 0
-        ? validFromGemini.map((p) => ({
-            platform: p.platform,
-            campaign_name: p.campaign_name,
-            promo_code: p.promo_code ?? null,
-            conditions: p.conditions ?? null,
-            start_date: p.start_date ?? null,
-            end_date: p.end_date ?? null,
-            reference_link: p.reference_url ?? null,
-            fetched_at: new Date().toISOString(),
-            is_active: true,
-          }))
-        : FALLBACK_RECORDS.map((r) => ({ ...r, fetched_at: new Date().toISOString(), is_active: true }));
+    const { error: insertError } = await supabase.from("promotions").insert(records);
+    if (insertError) throw insertError;
 
-    const { error: insertError } = await supabase.from("promotions").insert(cleanRecords);
-
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    const { error: deleteError } = await supabase.from("promotions").delete().lt("fetched_at", batchTime);
+    if (deleteError) {
+      // New rows are live; stale ones will be removed on the next successful run.
+      console.error("[api/promotions/fetch] failed to delete old rows:", deleteError);
     }
 
-    return NextResponse.json({ success: true, count: cleanRecords.length, source, date: today });
+    return NextResponse.json({ success: true, count: records.length, fetched_at: batchTime });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[api/promotions/fetch] database write failed:", err);
+    return NextResponse.json({ error: "database_error" }, { status: 500 });
   }
 }
+
+export const GET = refreshPromotions;
+export const POST = refreshPromotions;

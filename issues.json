@@ -1,0 +1,642 @@
+{
+  "audit": "mrhavefood.com pre-launch audit",
+  "date": "2026-10-05",
+  "status": "fixed",
+  "method": "5 read-only subagents x 4 checks = 20 checkpoints (Design D1-D4, Mobile M1-M4, States S1-S4, User flow U1-U4, Launch L1-L4). Findings merged and deduplicated; `sources` lists the original agent finding IDs.",
+  "summary": {
+    "high": 13,
+    "medium": 20,
+    "low": 6,
+    "total": 39
+  },
+  "needs_decision": [
+    "FLOW-01",
+    "DES-01",
+    "UX-01",
+    "AUTH-01"
+  ],
+  "issues": [
+    {
+      "id": "SEC-01",
+      "severity": "high",
+      "area": "security",
+      "file": "app/api/promotions/fetch/route.ts",
+      "line": 44,
+      "title": "Public POST wipes the promotions table and burns Gemini quota",
+      "detail": "No auth, secret, or rate limit. Each call runs Gemini with search grounding and deletes every row before inserting. Neither delete nor insert is checked for errors, so a failed insert leaves the table empty. Returns raw error.message and env var names to the caller.",
+      "fix": "Require Authorization: Bearer ${CRON_SECRET} (otherwise 401). Insert new rows first, then delete the old ones, and check every Supabase error. Return generic errors (502/500/503) and log the details on the server.",
+      "sources": [
+        "L4-01",
+        "S3-02"
+      ],
+      "outcome": "fixed",
+      "resolution": "CRON_SECRET bearer auth on GET/POST; Gemini failure no longer touches the table; insert-then-delete; generic errors."
+    },
+    {
+      "id": "SEC-02",
+      "severity": "high",
+      "area": "security",
+      "file": "app/api/chat/route.ts",
+      "line": 9,
+      "title": "/api/chat has no rate limit or input cap, and leaks internal errors",
+      "detail": "Public endpoint that proxies to Gemini with the server key. No type or length check on message (a non-string throws), no maxOutputTokens, and err.message plus 'GEMINI_CHAT_API_KEY is not set' are returned to the client.",
+      "fix": "Check typeof string and limit to 500 chars, set maxOutputTokens, add a simple per-IP rate limit (in-memory, or recommend a Vercel Firewall rule), and return generic messages with the right status codes.",
+      "sources": [
+        "L4-02",
+        "S3-03"
+      ],
+      "outcome": "fixed",
+      "resolution": "Validation, 500-char cap, history, maxOutputTokens, generic errors, 10 req/min/IP limiter. The limiter is in-memory per instance, so a Vercel Firewall rate-limit rule on /api/chat is still recommended."
+    },
+    {
+      "id": "FLOW-01",
+      "severity": "high",
+      "area": "user-flow",
+      "needs_decision": true,
+      "file": "app/register-restaurant/page.tsx",
+      "line": 159,
+      "title": "Restaurant registration 'ยืนยัน' button does nothing, so every lead is lost",
+      "detail": "This is the site's main conversion action. The step-2 button has no handler and sits outside any form. There is no API route or DB table, PDPA consent is never stored, and there is no loading, success, or error state. Validation is HTML 'required' only (whitespace passes, no phone pattern).",
+      "fix": "Add a POST /api/restaurant-applications route with validation that inserts into a Supabase table (including consent_accepted_at). Wrap step 2 in a form with idle/submitting/success/error states and a success screen. Set the back button to type=button.",
+      "sources": [
+        "S1-02",
+        "U2-01"
+      ],
+      "outcome": "fixed",
+      "resolution": "POST /api/restaurant-applications plus a form with validation, PDPA consent, and loading/success/error states. You need to run supabase/restaurant_applications.sql in Supabase before deploying."
+    },
+    {
+      "id": "FLOW-02",
+      "severity": "high",
+      "area": "states",
+      "file": "components/home-page.tsx",
+      "line": 21,
+      "title": "Restaurants section shows skeletons forever; fetched data is discarded",
+      "detail": "page.tsx fetches restaurants but HomePage never passes them down. HomeRestaurantsSection is hardcoded to 3 animate-pulse cards with no empty state.",
+      "fix": "Pass restaurants in and render real cards linking to line_oa_url. If the list is empty, show an empty state with a link to /register-restaurant.",
+      "sources": [
+        "S1-01",
+        "U3-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "FLOW-03",
+      "severity": "high",
+      "area": "content",
+      "file": "app/page.tsx",
+      "line": 22,
+      "title": "Live site shows expired promotions (serving the fallback list)",
+      "detail": "The promotions table returns nothing, so the site serves fallbackPromotions, which are not date-filtered. 4 of the 8 have already ended (e.g. 31 มี.ค. 69, 31 ก.ค. 69). Promos without dates show fetched_at = today, so they look freshly verified. The same issue appears in home-promo-hero.tsx:55.",
+      "fix": "Filter the fallback by end_date too and remove the expired entries. For promos without an end date, show 'ไม่ระบุวันหมดเขต'. If nothing valid remains, show an empty state (see UX-04).",
+      "sources": [
+        "U2-02",
+        "S2-01"
+      ],
+      "outcome": "fixed",
+      "resolution": "Fallback is now date-filtered and undated promos show \"ไม่ระบุวันหมดเขต\". Root cause still open: the promotions table is empty. Set CRON_SECRET and call /api/promotions/fetch (or add a Vercel Cron)."
+    },
+    {
+      "id": "FLOW-04",
+      "severity": "high",
+      "area": "user-flow",
+      "file": "app/register-restaurant/page.tsx",
+      "line": 170,
+      "title": "'สมัครสมาชิก' link and sitemap point to /register, which returns 404",
+      "detail": "No app/register route exists; the live page returns 404. The sitemap also submits this URL to Google.",
+      "fix": "Remove the link (or point it to /coming-soon) and remove /register from app/sitemap.ts.",
+      "sources": [
+        "U1-01",
+        "S4-01",
+        "L2-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "FLOW-05",
+      "severity": "high",
+      "area": "mobile",
+      "file": "components/floating-ai-button.tsx",
+      "line": 77,
+      "title": "Tapping the AI button on a phone may open and immediately close the chat",
+      "detail": "The button has both touch and mouse handlers. After touchend, the browser fires emulated mousedown/mouseup, so the chat toggles twice. Inferred from the code; not tested on a real device.",
+      "fix": "Use Pointer Events only (pointerdown/move/up/cancel with setPointerCapture) and remove the separate touch and mouse handlers.",
+      "sources": [
+        "U4-01",
+        "M4-01"
+      ],
+      "outcome": "fixed",
+      "resolution": "Switched to Pointer Events plus onClick. Not tested on a real iOS/Android device."
+    },
+    {
+      "id": "SEO-01",
+      "severity": "high",
+      "area": "seo",
+      "file": "app/layout.tsx",
+      "line": 55,
+      "title": "canonical, metadataBase, sitemap and JSON-LD use the apex domain, which 308-redirects to www",
+      "detail": "Sends Google conflicting canonical signals.",
+      "fix": "Create a SITE_URL = 'https://www.mrhavefood.com' constant in lib and use it in layout, sitemap, robots and JSON-LD.",
+      "sources": [
+        "L2-01"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "LAUNCH-01",
+      "severity": "high",
+      "area": "launch",
+      "file": "components/home/home-promo-hero.tsx",
+      "line": 183,
+      "title": "Above the fold doesn't say in one sentence what the site does, and there's no primary CTA",
+      "detail": "The only h1 is 'วันนี้กินอะไรดี ?'. Above the fold there's a fake search bar and a rotating carousel, but no CTA button. The meta description promises receipts and a heatmap that don't exist on the site.",
+      "fix": "Add an h1 like 'รวมโค้ดส่วนลดส่งอาหาร GrabFood · LINE MAN · ShopeeFood · Robinhood ไว้ที่เดียว' with a subline, demote 'วันนี้กินอะไรดี ?' to h2, and add a 'ดูโปรทั้งหมด' CTA (scrolls to #platforms).",
+      "sources": [
+        "L1-01",
+        "L1-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "STATE-01",
+      "severity": "high",
+      "area": "states",
+      "file": "app/error.tsx",
+      "line": 1,
+      "title": "No app/error.tsx or app/global-error.tsx",
+      "detail": "Any runtime error falls back to Next's default page, with no Thai message and no retry button.",
+      "fix": "Add error.tsx (Thai message, 'ลองใหม่' button calling reset(), link home) and global-error.tsx (renders its own html/body).",
+      "sources": [
+        "S3-01"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "MOB-01",
+      "severity": "high",
+      "area": "mobile",
+      "file": "components/home/home-promo-hero.tsx",
+      "line": 193,
+      "title": "Carousel dots are 6x6px with no aria-label; timer doesn't reset after a manual pick",
+      "detail": "The 8 dot buttons are nearly impossible to tap, are announced as just 'button' by screen readers, there's no pause on hover/focus or for reduced-motion, and an auto-advance can fire right after the user picks a slide.",
+      "fix": "Expand the hit area to 44px (keep the small visual dot), add aria-label and aria-current, reset the interval when current changes, pause on hover/focus, and respect prefers-reduced-motion.",
+      "sources": [
+        "M2-01",
+        "U4-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "DES-01",
+      "severity": "high",
+      "area": "design",
+      "needs_decision": true,
+      "file": "components/theme/theme-toggle.tsx",
+      "line": 27,
+      "title": "Dark mode is unreachable (no toggle rendered), and turning it on would break the page",
+      "detail": "ThemeToggle and NavThemeButton are not rendered anywhere. There are about 95 html[data-theme=dark] selectors, mostly targeting classes that no longer exist. Live components use hardcoded bg-white and light-only hex, so dark mode would show light-grey text on white.",
+      "fix": "Option A: remove dark mode entirely (toggle, dark tokens, dark selectors, boot script) and set colorScheme to 'light'. Option B: switch every component to tokens, then show the toggle in the header and support prefers-color-scheme.",
+      "sources": [
+        "D4-01",
+        "D4-02"
+      ],
+      "outcome": "fixed",
+      "resolution": "Option A: removed the toggle, dark tokens, boot script, and all dark CSS; colorScheme is light."
+    },
+    {
+      "id": "DES-02",
+      "severity": "high",
+      "area": "design",
+      "file": "app/globals.css",
+      "line": 44,
+      "title": "Colors don't come from one source: tokens are incomplete and hex is hardcoded everywhere",
+      "detail": "@theme has no brand/border/surface/ink-secondary tokens, so components hardcode #e3dddd, #45627a, #5c6e7f, #f5f5f5, #00437c, etc. There are three syntaxes for token references, plus inline style={{color:'white'}}. Platform colors are defined twice with different values (promotions-data.ts and badge.tsx).",
+      "fix": "Add --color-brand-primary/-accent, surface, surface-subtle, border, border-strong, ink-secondary, plus hover variants via color-mix to @theme. Replace hex in the live components (register-restaurant, not-found, coming-soon, home/*, floating-ai-button, button, badge). Lower the specificity of the global a/button color rule so the inline style can be removed. Merge the platform colors into one source.",
+      "sources": [
+        "D1-01",
+        "D1-02",
+        "D1-03",
+        "D3-02"
+      ],
+      "outcome": "fixed",
+      "resolution": "Tokens live in app/globals.css @theme. Base styles moved into @layer base so utilities win, which removed the need for the inline color:white overrides."
+    },
+    {
+      "id": "UX-01",
+      "severity": "medium",
+      "area": "user-flow",
+      "needs_decision": true,
+      "file": "components/home/home-promo-hero.tsx",
+      "line": 82,
+      "title": "Search bar is a static span; category chips filter nothing",
+      "detail": "The homepage has zero <input> elements, and the mic icon does nothing. The 20 category chips only highlight and scroll; the list doesn't change because promotions have no category field.",
+      "fix": "Make search a real input that filters promotions client-side (campaign_name / conditions / platform) with a 'ไม่พบโปรโมชั่น' empty state, and remove the mic. Hide the category chips until category data exists, or keep them as scroll shortcuts but remove the active state that implies filtering.",
+      "sources": [
+        "L1-02",
+        "S2-02",
+        "U3-02",
+        "U3-03"
+      ],
+      "outcome": "fixed",
+      "resolution": "Real search input filters promotions, with an empty state. Category chips now only scroll to the list (no fake active state)."
+    },
+    {
+      "id": "UX-02",
+      "severity": "medium",
+      "area": "user-flow",
+      "file": "components/home/home-footer-section.tsx",
+      "line": 32,
+      "title": "'คุยกับ Mr.AI' goes to /coming-soon even though the chat works; <button> nested in <a>",
+      "detail": "Both footer CTAs are dead ends, and the nested interactive elements are invalid HTML (two tab stops per CTA).",
+      "fix": "Add an openChat action to the zustand store and have 'คุยกับ Mr.AI' open the chat. Mark the price-compare CTA as 'เร็วๆ นี้'. Use a Link styled as a button instead of a button inside a Link.",
+      "sources": [
+        "U3-01",
+        "S4-01"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "UX-03",
+      "severity": "medium",
+      "area": "user-flow",
+      "file": "components/home/home-platform-section.tsx",
+      "line": 137,
+      "title": "Promo rows link to the platform homepage instead of the campaign page; no way to copy the code",
+      "detail": "reference_link is ignored, and GrabFood uses the /th/en/ locale.",
+      "fix": "Use href={promo.reference_link ?? meta.webUrl}, add a 'คัดลอกโค้ด' button, and change Grab to /th/th/.",
+      "sources": [
+        "U3-05"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "UX-04",
+      "severity": "medium",
+      "area": "states",
+      "file": "components/home/home-platform-section.tsx",
+      "line": 124,
+      "title": "Promotions list has no empty state and silently drops unknown platforms",
+      "detail": "An empty array renders nothing under the heading, and `{meta && ...}` drops any platform that's not in platformMeta.",
+      "fix": "Add an empty state linking to each platform, and render unknown platforms with generic meta.",
+      "sources": [
+        "S2-01"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "CHAT-01",
+      "severity": "medium",
+      "area": "a11y",
+      "file": "components/floating-ai-button.tsx",
+      "line": 229,
+      "title": "AI chat isn't keyboard accessible; close/send buttons are under 44px; once hidden it never comes back",
+      "detail": "The FAB is a div with tabIndex -1, Esc doesn't close the panel, the input isn't focused on open, ✕ and send have no aria-label, the ✕ is about 14x20px and send is 36px, and the panel has no role=dialog or aria-live.",
+      "fix": "Make the FAB a <button> with aria-label and aria-expanded, close on Esc and return focus, autofocus the input, make close/send size-11 with aria-labels, use role=dialog and aria-live=polite, and save the hidden state in sessionStorage with a way to bring the button back.",
+      "sources": [
+        "U4-02",
+        "M2-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "CHAT-02",
+      "severity": "medium",
+      "area": "mobile",
+      "file": "components/floating-ai-button.tsx",
+      "line": 127,
+      "title": "Chat panel and FAB ignore safe-area and the keyboard, and cover the bottom CTAs",
+      "detail": "No viewportFit: 'cover' or env(safe-area-inset-*). The panel is fixed at w-80 and doesn't follow the keyboard, and the 64px FAB covers the bottom-right of the content.",
+      "fix": "Set viewportFit: 'cover' in the viewport, use calc(1rem + env(safe-area-inset-bottom)) for the FAB and panel, make the panel inset-x-3 w-auto below sm, and add pb-24 to the footer.",
+      "sources": [
+        "M3-01",
+        "M4-02"
+      ],
+      "outcome": "fixed",
+      "resolution": "Uses safe-area insets and the visualViewport keyboard inset. Not tested on a real iOS keyboard."
+    },
+    {
+      "id": "CHAT-03",
+      "severity": "medium",
+      "area": "states",
+      "file": "components/floating-ai-button.tsx",
+      "line": 116,
+      "title": "Chat has no history/context, no timeout, and doesn't check res.ok",
+      "detail": "Only the latest message is sent, so the AI can't connect follow-ups. A hung request shows the typing dots forever. Errors show a message but no retry button.",
+      "fix": "Send messages.slice(-10) and use startChat({history}) on the server, add a 20s AbortController timeout plus abort on unmount, check res.ok, add a 'ลองใหม่' button, and set maxLength=500 on the input.",
+      "sources": [
+        "U4-03",
+        "S1-04",
+        "S2-03"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "STATE-02",
+      "severity": "medium",
+      "area": "states",
+      "file": "app/page.tsx",
+      "line": 44,
+      "title": "No loading.tsx; force-dynamic queries Supabase on every request",
+      "detail": "The Suspense in page.tsx has no fallback and does nothing. On a cold DB the page is blank.",
+      "fix": "Add app/loading.tsx (skeleton) and switch force-dynamic to revalidate = 300.",
+      "sources": [
+        "S1-03",
+        "L4-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "STATE-03",
+      "severity": "medium",
+      "area": "states",
+      "file": "lib/supabase.ts",
+      "line": 3,
+      "title": "Supabase errors are swallowed and missing env vars default to ''",
+      "detail": "page.tsx destructures only data and ignores error. A missing service key silently produces a broken client, and the site shows fallback data with no log.",
+      "fix": "Destructure and console.error the error, have createSupabaseAdmin throw a clear error when env vars are missing, and use the anon client for public reads.",
+      "sources": [
+        "S3-04",
+        "L4-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "SEO-02",
+      "severity": "medium",
+      "area": "seo",
+      "file": "app/layout.tsx",
+      "line": 69,
+      "title": "No Open Graph / Twitter image",
+      "detail": "Links shared on LINE or Facebook render an empty card.",
+      "fix": "Add app/opengraph-image.tsx (1200x630, generated with ImageResponse: logo + Thai headline), plus alt text.",
+      "sources": [
+        "L2-03"
+      ],
+      "outcome": "fixed",
+      "resolution": "app/opengraph-image.jpg and twitter-image.jpg (1200x630) with alt text."
+    },
+    {
+      "id": "SEO-03",
+      "severity": "medium",
+      "area": "seo",
+      "file": "app/layout.tsx",
+      "line": 47,
+      "title": "Description and OG copy are in English and describe features that don't exist",
+      "detail": "lang=th, but the description talks about receipts and a heatmap. og:title doesn't match <title>.",
+      "fix": "Write a Thai description that matches the real product and align og/twitter title with <title>.",
+      "sources": [
+        "L2-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "SEC-03",
+      "severity": "medium",
+      "area": "security",
+      "file": "next.config.ts",
+      "line": 3,
+      "title": "No basic security headers",
+      "detail": "Missing X-Content-Type-Options, Referrer-Policy, X-Frame-Options, and Permissions-Policy. Supabase RLS hasn't been verified.",
+      "fix": "Add headers() for '/(.*)'. Recommend checking RLS with the Supabase advisors separately.",
+      "sources": [
+        "L4-04"
+      ],
+      "outcome": "fixed",
+      "resolution": "Headers added. Supabase RLS on promotions/restaurants still needs to be checked in the dashboard."
+    },
+    {
+      "id": "PERF-01",
+      "severity": "medium",
+      "area": "performance",
+      "file": "public/assets/banner.png",
+      "line": 1,
+      "title": "Unoptimized images, about 3 MB total",
+      "detail": "banner.png is 790KB, Call2Action is 733KB, miniAds is 622KB. aimrhavefood.png is 267KB but displayed at 28-64px. app/icon.svg is 272KB.",
+      "fix": "Convert to WebP at the size actually displayed, set images.formats avif/webp in next.config, and add sizes to the banner.",
+      "sources": [
+        "L4-03",
+        "L2-05"
+      ],
+      "outcome": "fixed",
+      "resolution": "Assets converted to resized WebP (~3 MB → ~520 KB) and images.formats is avif/webp. app/icon.svg (272 KB custom art) is kept as is."
+    },
+    {
+      "id": "AUTH-01",
+      "severity": "medium",
+      "area": "user-flow",
+      "needs_decision": true,
+      "file": "components/auth/auth-session-provider.tsx",
+      "line": 5,
+      "title": "next-auth is installed but no sign-in exists; the Member* models are unused",
+      "detail": "No /api/auth route, the provider is just a passthrough, and the header shows only an English 'Restaurant' link.",
+      "fix": "Option A (recommended for now): remove next-auth and the dead wrapper, and label the header CTA 'ลงทะเบียนร้านอาหาร'. Option B: build sign-in with LINE/Google (a separate project).",
+      "sources": [
+        "U1-02"
+      ],
+      "outcome": "fixed",
+      "resolution": "Removed the next-auth dependency and the passthrough provider. Header CTA is now labelled \"ลงทะเบียนร้านอาหาร\"."
+    },
+    {
+      "id": "DES-03",
+      "severity": "medium",
+      "area": "design",
+      "file": "components/ui/card.tsx",
+      "line": 12,
+      "title": "Orphaned UI kit (about 14 files) and dead CSS using the old palette; default Next.js SVGs still present",
+      "detail": "card, input, select, separator, bento-grid, sticky-scroll-reveal, infinite-moving-cards, background-beams, multi-step-loader, hover-border-gradient, background-gradient-animation, tracing-beam, placeholders-and-vanish-input and ai-eyes aren't imported anywhere. globals.css (3149 lines) still has .hero-*, .compare-*, .heat-* and [class*='#111111'] selectors. public/file|globe|vercel|window.svg are unused.",
+      "fix": "Delete the unused components, SVGs and CSS blocks (check with grep before deleting each one).",
+      "sources": [
+        "D1-05",
+        "M4-04",
+        "L3-01"
+      ],
+      "outcome": "fixed",
+      "resolution": "Deleted 14 unused UI files, theme-toggle, auth wrapper, lib/cn.ts, the default SVGs, and about 3,000 lines of dead CSS. Prisma Member* models are left untouched (DB schema)."
+    },
+    {
+      "id": "DES-04",
+      "severity": "medium",
+      "area": "design",
+      "file": "app/globals.css",
+      "line": 3,
+      "title": "Font variables declared twice, and the weights used don't match the weights loaded",
+      "detail": ":root redeclares --font-inter and the others as plain strings, overriding next/font. font-black (900) and Inter font-bold (700) are used but not loaded, so the browser synthesizes them.",
+      "fix": "Remove the redeclaration in globals.css, map the fonts in @theme, and either load the weights in use or change the classes to weights that are loaded.",
+      "sources": [
+        "D2-01",
+        "D2-03"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "DES-05",
+      "severity": "medium",
+      "area": "design",
+      "file": "components/home/home-promo-hero.tsx",
+      "line": 84,
+      "title": "Font sizes, radius and shadows use arbitrary values instead of a scale",
+      "detail": "text-[10px|11px|13px|14px], rounded-[28px|2rem|1.8rem], and shadow-[...rgba(0,67,124,...)] repeated in several places.",
+      "fix": "Add --text-2xs, --radius-card, --shadow-card and --shadow-elevated to @theme and use them in the live components. Raise 10px text to at least 12px.",
+      "sources": [
+        "D2-02",
+        "D3-01",
+        "M3-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "DES-06",
+      "severity": "medium",
+      "area": "design",
+      "file": "app/layout.tsx",
+      "line": 86,
+      "title": "themeColor and the manifest still use the old cream #f6f0e1",
+      "detail": "The current --background is #f4eeee.",
+      "fix": "Update both to #f4eeee (and add a dark value if dark mode is kept).",
+      "sources": [
+        "D1-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "MOB-02",
+      "severity": "medium",
+      "area": "mobile",
+      "file": "components/auth/auth-nav-actions.tsx",
+      "line": 8,
+      "title": "Header CTA is 85x28px, and there is no mobile nav",
+      "detail": "The main nav is hidden lg:block, so mobile users get only the logo and this one small button.",
+      "fix": "Make the CTA min-h-11 with a Thai label, and add mobile section links (a compact scrollable row).",
+      "sources": [
+        "M2-03",
+        "M4-04"
+      ],
+      "outcome": "fixed",
+      "resolution": "CTA min-h-11 with a Thai label, and a mobile section-link row in the header. The nested scroll container is unchanged (optional item)."
+    },
+    {
+      "id": "MOB-03",
+      "severity": "medium",
+      "area": "mobile",
+      "file": "app/globals.css",
+      "line": 119,
+      "title": "Inputs only reach 16px through an unlayered font: inherit rule (fragile)",
+      "detail": "The components declare text-sm. If the rule is removed, iOS will zoom when an input is focused.",
+      "fix": "Use text-base sm:text-sm on inputClass and the chat input.",
+      "sources": [
+        "M3-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "SEO-04",
+      "severity": "low",
+      "area": "seo",
+      "file": "app/manifest.ts",
+      "line": 13,
+      "title": "Manifest has only an SVG marked maskable; no PNG 192/512 or apple-icon",
+      "detail": "Chrome requires PNG icons for installability.",
+      "fix": "Add app/apple-icon.png and PNG 192/512 icons generated from logoMrHaveFood.png, and change the SVG entry's purpose to 'any'.",
+      "sources": [
+        "L2-05"
+      ],
+      "outcome": "fixed",
+      "resolution": "PNG 192/512, a maskable 512, and app/apple-icon.png generated from icon.svg."
+    },
+    {
+      "id": "DOC-01",
+      "severity": "low",
+      "area": "launch",
+      "file": "README.md",
+      "line": 1,
+      "title": "README describes unbuilt features and lists no env vars",
+      "detail": "Mentions receipt OCR and a heatmap, and doesn't list the required env vars.",
+      "fix": "Update it to match the real product and list NEXT_PUBLIC_SUPABASE_URL/ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GEMINI_CHAT_API_KEY, GEMINI_PROMOTIONS_API_KEY and CRON_SECRET.",
+      "sources": [
+        "L3-01"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "STATE-04",
+      "severity": "low",
+      "area": "states",
+      "file": "app/not-found.tsx",
+      "line": 5,
+      "title": "not-found hardcodes bg-white and lacks noindex; coming-soon has no noindex",
+      "detail": "",
+      "fix": "Use tokens and add metadata robots: { index: false } to not-found and coming-soon.",
+      "sources": [
+        "S4-02",
+        "L2-02"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "MOB-04",
+      "severity": "low",
+      "area": "mobile",
+      "file": "components/home/home-marquee-section.tsx",
+      "line": 33,
+      "title": "Marquee animates by the container's width instead of the track's, so it snaps on mobile",
+      "detail": "",
+      "fix": "Add w-max and render 2 copies so that -50% equals exactly one set.",
+      "sources": [
+        "M4-03"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "MOB-05",
+      "severity": "low",
+      "area": "mobile",
+      "file": "app/coming-soon/page.tsx",
+      "line": 75,
+      "title": "Back-home link is 36px tall",
+      "detail": "",
+      "fix": "Use py-3 (44px or more).",
+      "sources": [
+        "M2-04"
+      ],
+      "outcome": "fixed"
+    },
+    {
+      "id": "DES-07",
+      "severity": "low",
+      "area": "design",
+      "file": "app/globals.css",
+      "line": 28,
+      "title": "Duplicate token aliases; ::selection uses an old color",
+      "detail": "--brand-surface == --background, --ink == --foreground; selection is rgba(227,107,31) instead of #dd722c.",
+      "fix": "Remove the duplicates and use color-mix(var(--brand-accent) 25%) for the selection color.",
+      "sources": [
+        "D4-03"
+      ],
+      "outcome": "fixed"
+    }
+  ],
+  "passed": [
+    {
+      "check": "M1",
+      "note": "No horizontal scroll at 375px on /, /coming-soon or /register-restaurant (measured live)"
+    },
+    {
+      "check": "U3",
+      "note": "External links have target=_blank rel=noopener noreferrer nofollow; no href='#'; in-page anchors work"
+    },
+    {
+      "check": "L4",
+      "note": "lang=th, robots.txt and manifest respond correctly; no secrets in NEXT_PUBLIC_; .env not committed"
+    }
+  ],
+  "approved": {
+    "date": "2026-10-05",
+    "scope": "all 39",
+    "decisions": {
+      "FLOW-01": "new Supabase table restaurant_applications",
+      "DES-01": "remove dark mode (light only)",
+      "UX-01": "real client-side search; category chips scroll only",
+      "AUTH-01": "remove next-auth"
+    }
+  }
+}

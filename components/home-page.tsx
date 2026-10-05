@@ -4,12 +4,11 @@ import { HomePromoHero } from "@/components/home/home-promo-hero";
 import { HomePlatformSection } from "@/components/home/home-platform-section";
 import { HomeRestaurantsSection } from "@/components/home/home-restaurants-section";
 import { HomeShell } from "@/components/home/home-shell";
-import { fallbackPromotions } from "@/lib/promotions-data";
 import type { Promotion, Restaurant } from "@/lib/supabase";
 
 type HomePageProps = {
   promotions: Promotion[];
-  restaurants?: Restaurant[];
+  restaurants: Restaurant[];
 };
 
 export function HomePage({ promotions, restaurants }: HomePageProps) {
@@ -18,7 +17,7 @@ export function HomePage({ promotions, restaurants }: HomePageProps) {
       <HomePromoHero promotions={promotions} />
       <HomePlatformSection promotions={promotions} />
       <HomeMarqueeSection />
-      <HomeRestaurantsSection />
+      <HomeRestaurantsSection restaurants={restaurants} />
       <HomeFooterSection />
     </HomeShell>
   );
