@@ -1,33 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const VALID_PLATFORMS = ["GrabFood", "LINE MAN", "ShopeeFood", "Robinhood"];
+import { buildDigestItem } from "@/lib/farm/digest";
+import { refreshPromotions } from "@/lib/farm/refresh";
 
-function buildPrompt(): string {
-  return `ให้คุณเป็นผู้เชี่ยวชาญด้านการวิเคราะห์ตลาดและข้อมูลโปรโมชั่นอาหารเดลิเวอรี่ในประเทศไทย (Thailand Food Delivery Market Analyst)
-Task: ช่วยสืบค้นข้อมูลแคมเปญ รหัสส่วนลด (Promo Codes) และโปรโมชั่นล่าสุดจากแพลตฟอร์ม GrabFood, LINE MAN, ShopeeFood และ Robinhood ล่าสุด
-Search Context: ให้เน้นค้นหาจาก Official Facebook Page, เว็บไซต์ข่าวโปรโมชั่น, และหน้า Landing Page ของแคมเปญที่เปิดเป็นสาธารณะ
-Output Format: ให้ตอบกลับเป็น JSON เท่านั้น (ห้ามมีคำเกริ่นนำหรือคำลงท้าย) โดยมีโครงสร้างดังนี้:
-[
-  {
-    "platform": "ชื่อแพลตฟอร์ม (GrabFood / LINE MAN / ShopeeFood / Robinhood)",
-    "campaign_name": "ชื่อแคมเปญหรือหัวข้อโปรโมชั่น",
-    "description": "รายละเอียดโปรโมชั่นโดยย่อ",
-    "promo_code": "รหัสส่วนลด (ถ้ามี ถ้าไม่มีให้ใส่ null)",
-    "discount_value": "มูลค่าส่วนลด เช่น 50%, 100 บาท (ถ้ามี)",
-    "start_date": "วันเริ่มต้นโปรโมชั่น (รูปแบบ YYYY-MM-DD ถ้าไม่ทราบให้ใส่ null)",
-    "end_date": "วันสิ้นสุดโปรโมชั่น (รูปแบบ YYYY-MM-DD ถ้าไม่ทราบให้ใส่ null)",
-    "conditions": "เงื่อนไขหลัก (เช่น สั่งขั้นต่ำ 200.-, เฉพาะร้านที่ร่วมรายการ)",
-    "reference_url": "ลิงก์อ้างอิงแหล่งที่มาของข้อมูล"
-  }
-]`;
-}
+// Gemini with search grounding can take a while.
+export const maxDuration = 120;
 
-function parseJSON(text: string): unknown[] {
-  // Strip markdown code blocks if present
-  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-  return JSON.parse(cleaned);
-}
+type FarmBody = { farm_job_id?: string; trigger?: string; payload?: unknown; dry_run?: boolean };
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -35,92 +14,57 @@ function isAuthorized(req: NextRequest): boolean {
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-type GeminiPromotion = {
-  platform: string;
-  campaign_name: string;
-  promo_code: string | null;
-  conditions: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  reference_url: string | null;
-};
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const asDate = (v: unknown) => (typeof v === "string" && ISO_DATE.test(v) ? v : null);
-const asText = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-const asUrl = (v: unknown) => (typeof v === "string" && /^https?:\/\//.test(v) ? v : null);
-
-// Refreshes the promotions table from Gemini + Google Search.
-// Protected by CRON_SECRET (Vercel Cron sends it as a Bearer token on GET).
-async function refreshPromotions(req: NextRequest) {
+/**
+ * Farm engine endpoint (AI Automation Farm, kind mrhavefood.promo).
+ * POST body: {"farm_job_id", "trigger", "payload", "dry_run"} → {"items", "cost_usd", "stats", ...}
+ * GET is kept for a Vercel Cron (same response, no body).
+ *
+ * dry_run only means "do not publish anything outside the site". This route never posts —
+ * publishing is the farm's job — so the table refresh runs either way.
+ */
+async function handle(req: NextRequest, body: FarmBody) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const apiKey = process.env.GEMINI_PROMOTIONS_API_KEY;
-  if (!apiKey) {
-    console.error("[api/promotions/fetch] GEMINI_PROMOTIONS_API_KEY is not configured");
-    return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
-  }
-
-  // 1. Ask Gemini. Any failure here leaves the existing rows untouched.
-  let valid: GeminiPromotion[];
+  const startedAt = Date.now();
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: buildPrompt() }] }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: [{ googleSearch: {} }] as any,
+    const result = await refreshPromotions();
+    const item = buildDigestItem(result.active, result.newRows, { imageBaseUrl: req.nextUrl.origin });
+    console.info(
+      `[api/promotions/fetch] job=${body.farm_job_id ?? "-"} trigger=${body.trigger ?? "-"} dry_run=${Boolean(body.dry_run)}`,
+      result.stats,
+      `cost=$${result.costUsd}`,
+      `${Date.now() - startedAt}ms`,
+    );
+    return NextResponse.json({
+      items: item ? [item] : [],
+      cost_usd: result.costUsd,
+      stats: result.stats,
+      dry_run: Boolean(body.dry_run),
+      farm_job_id: body.farm_job_id ?? null,
     });
-    const parsed = parseJSON(result.response.text());
-    valid = (Array.isArray(parsed) ? parsed : [])
-      .filter((p): p is GeminiPromotion => !!p && typeof p === "object" && VALID_PLATFORMS.includes((p as GeminiPromotion).platform))
-      .filter((p) => asText(p.campaign_name));
   } catch (err) {
-    console.error("[api/promotions/fetch] Gemini request or parsing failed:", err);
-    return NextResponse.json({ error: "upstream_error" }, { status: 502 });
-  }
-
-  if (valid.length === 0) {
-    console.warn("[api/promotions/fetch] Gemini returned no usable promotions; keeping existing rows");
-    return NextResponse.json({ error: "no_results" }, { status: 502 });
-  }
-
-  // 2. Insert the new batch first, then delete the older rows, so a failed
-  //    insert never leaves the table empty.
-  try {
-    const { createSupabaseAdmin } = await import("@/lib/supabase");
-    const supabase = createSupabaseAdmin();
-    const batchTime = new Date().toISOString();
-
-    const records = valid.map((p) => ({
-      platform: p.platform,
-      campaign_name: asText(p.campaign_name) as string,
-      promo_code: asText(p.promo_code),
-      conditions: asText(p.conditions),
-      start_date: asDate(p.start_date),
-      end_date: asDate(p.end_date),
-      reference_link: asUrl(p.reference_url),
-      fetched_at: batchTime,
-      is_active: true,
-    }));
-
-    const { error: insertError } = await supabase.from("promotions").insert(records);
-    if (insertError) throw insertError;
-
-    const { error: deleteError } = await supabase.from("promotions").delete().lt("fetched_at", batchTime);
-    if (deleteError) {
-      // New rows are live; stale ones will be removed on the next successful run.
-      console.error("[api/promotions/fetch] failed to delete old rows:", deleteError);
+    console.error("[api/promotions/fetch] refresh failed:", err);
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("not configured") || message.includes("Missing required environment")) {
+      return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
     }
-
-    return NextResponse.json({ success: true, count: records.length, fetched_at: batchTime });
-  } catch (err) {
-    console.error("[api/promotions/fetch] database write failed:", err);
-    return NextResponse.json({ error: "database_error" }, { status: 500 });
+    return NextResponse.json({ error: "refresh_failed" }, { status: 502 });
   }
 }
 
-export const GET = refreshPromotions;
-export const POST = refreshPromotions;
+export async function POST(req: NextRequest) {
+  let body: FarmBody = {};
+  try {
+    const parsed = await req.json();
+    if (parsed && typeof parsed === "object") body = parsed as FarmBody;
+  } catch {
+    // An empty body (manual curl) is fine.
+  }
+  return handle(req, body);
+}
+
+export async function GET(req: NextRequest) {
+  return handle(req, { trigger: "vercel-cron" });
+}

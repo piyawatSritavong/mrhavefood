@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Kanit, Prompt } from "next/font/google";
+import Script from "next/script";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -24,6 +25,8 @@ const prompt = Prompt({
   variable: "--font-prompt",
   display: "swap",
 });
+
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -99,6 +102,15 @@ export default function RootLayout({
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
         {children}
         <FloatingAIButton />
+        {ADSENSE_CLIENT && (
+          <Script
+            id="adsense"
+            async
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          />
+        )}
       </body>
     </html>
   );

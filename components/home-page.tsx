@@ -9,13 +9,14 @@ import type { Promotion, Restaurant } from "@/lib/supabase";
 type HomePageProps = {
   promotions: Promotion[];
   restaurants: Restaurant[];
+  affiliateLinks: Record<string, string>;
 };
 
-export function HomePage({ promotions, restaurants }: HomePageProps) {
+export function HomePage({ promotions, restaurants, affiliateLinks }: HomePageProps) {
   return (
     <HomeShell>
       <HomePromoHero promotions={promotions} />
-      <HomePlatformSection promotions={promotions} />
+      <HomePlatformSection promotions={promotions} affiliateLinks={affiliateLinks} />
       <HomeMarqueeSection />
       <HomeRestaurantsSection restaurants={restaurants} />
       <HomeFooterSection />

@@ -1,7 +1,11 @@
+import { isAllowedSource } from "@/lib/farm/sources";
 import type { Promotion } from "@/lib/supabase";
+import { bangkokToday } from "@/lib/time";
 
 export type PlatformMeta = {
   label: string;
+  /** URL segment for /promo/[platform]. */
+  slug: string;
   abbr: string;
   /** Brand color of the delivery platform (third-party brand, not our palette). */
   color: string;
@@ -10,16 +14,17 @@ export type PlatformMeta = {
 
 // Single source for platform brand colors and links.
 export const platformMeta: Record<string, PlatformMeta> = {
-  GrabFood: { label: "GrabFood", abbr: "GF", color: "#00B14F", webUrl: "https://food.grab.com/th/th/" },
-  "LINE MAN": { label: "LINE MAN", abbr: "LM", color: "#00C300", webUrl: "https://lineman.line.me/" },
-  ShopeeFood: { label: "ShopeeFood", abbr: "SF", color: "#EE4D2D", webUrl: "https://shopee.co.th/m/shopeefood" },
-  Robinhood: { label: "Robinhood", abbr: "RH", color: "#4A148C", webUrl: "https://www.robinhood.co.th/" },
+  GrabFood: { label: "GrabFood", slug: "grabfood", abbr: "GF", color: "#00B14F", webUrl: "https://food.grab.com/th/th/" },
+  "LINE MAN": { label: "LINE MAN", slug: "lineman", abbr: "LM", color: "#00C300", webUrl: "https://lineman.line.me/" },
+  ShopeeFood: { label: "ShopeeFood", slug: "shopeefood", abbr: "SF", color: "#EE4D2D", webUrl: "https://shopee.co.th/m/shopeefood" },
+  Robinhood: { label: "Robinhood", slug: "robinhood", abbr: "RH", color: "#4A148C", webUrl: "https://www.robinhood.co.th/" },
 };
 
 export function getPlatformMeta(platform: string): PlatformMeta {
   return (
     platformMeta[platform] ?? {
       label: platform,
+      slug: "",
       abbr: platform.slice(0, 2).toUpperCase(),
       color: "var(--brand-primary)",
       webUrl: "",
@@ -43,16 +48,16 @@ export function promoHref(promo: Promotion): string | null {
   return promo.reference_link || getPlatformMeta(promo.platform).webUrl || null;
 }
 
-function todayISO(): string {
-  return new Date().toISOString().split("T")[0];
+export function getPlatformBySlug(slug: string): PlatformMeta | null {
+  return Object.values(platformMeta).find((m) => m.slug === slug) ?? null;
 }
 
-/** Drop inactive or expired promotions (end_date before today). */
-export function filterActivePromotions(list: Promotion[], today = todayISO()): Promotion[] {
+/** Hide inactive or expired promotions (end_date before today in Bangkok). Rows are never deleted. */
+export function filterActivePromotions(list: Promotion[], today = bangkokToday()): Promotion[] {
   return list.filter((p) => p.is_active && (!p.end_date || p.end_date >= today));
 }
 
-export const fallbackPromotions: Promotion[] = [
+const curatedFallback: Promotion[] = [
   {
     id: "1",
     platform: "GrabFood",
@@ -150,3 +155,8 @@ export const fallbackPromotions: Promotion[] = [
     is_active: true,
   },
 ];
+
+// Shown only when the table is empty. Held to the same source rule as live data.
+export const fallbackPromotions: Promotion[] = curatedFallback.filter((p) =>
+  isAllowedSource(p.reference_link, p.platform),
+);

@@ -1,4 +1,6 @@
 import { HomePage } from "@/components/home-page";
+import { getAffiliateLinks } from "@/lib/affiliate";
+import { listActivePromotions } from "@/lib/farm/refresh";
 import { fallbackPromotions, filterActivePromotions } from "@/lib/promotions-data";
 import { createSupabaseAdmin, type Promotion, type Restaurant } from "@/lib/supabase";
 
@@ -7,15 +9,7 @@ export const revalidate = 300;
 
 async function fetchPromotions(): Promise<Promotion[]> {
   try {
-    const { data, error } = await createSupabaseAdmin()
-      .from("promotions")
-      .select("*")
-      .eq("is_active", true)
-      .order("fetched_at", { ascending: false });
-
-    if (error) throw error;
-
-    const active = filterActivePromotions(data ?? []);
+    const active = await listActivePromotions();
     if (active.length > 0) return active;
     console.warn("[home] promotions table has no active rows; serving fallback list");
   } catch (err) {
@@ -44,5 +38,5 @@ async function fetchRestaurants(): Promise<Restaurant[]> {
 export default async function Page() {
   const [promotions, restaurants] = await Promise.all([fetchPromotions(), fetchRestaurants()]);
 
-  return <HomePage promotions={promotions} restaurants={restaurants} />;
+  return <HomePage promotions={promotions} restaurants={restaurants} affiliateLinks={getAffiliateLinks()} />;
 }
