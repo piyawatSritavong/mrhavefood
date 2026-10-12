@@ -58,6 +58,7 @@ export const metadata: Metadata = {
   authors: [{ name: SITE_NAME }],
   alternates: {
     canonical: "/",
+    types: { "application/rss+xml": [{ url: "/rss.xml", title: "MrHaveFood — บทความ" }] },
   },
   openGraph: {
     title,

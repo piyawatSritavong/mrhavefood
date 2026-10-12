@@ -42,6 +42,41 @@ curl -X POST https://www.mrhavefood.com/api/promotions/fetch -H "Authorization: 
 
 To automate it, add a Vercel Cron job pointing at `/api/promotions/fetch` (Vercel sends `CRON_SECRET` as the bearer token on GET).
 
+## AI Automation Farm (engine `mrhavefood`, Web SEO round)
+
+- **Farm endpoint** `POST /api/promotions/fetch` (`Authorization: Bearer $CRON_SECRET`, body `{"farm_job_id","trigger","payload","dry_run"}`)
+  refreshes promotions from official promo pages / affiliate feeds only (`lib/farm/sources.ts`), hides expired rows
+  (never deletes) and answers `{"items", "cost_usd", "stats"}`. Items are `mrhavefood.info` facts handed to
+  Auto-Content (`lib/farm/facts.ts`): a weekly per-app roundup and single-code explainers, every fact with a public URL.
+  `dry_run` only means "publish nothing outside the site" — this route never posts.
+- **SPP v1 receiver** `POST /api/autopost/v1/articles` + signed `GET /api/autopost/v1/health`
+  (HMAC `AUTOPOST_SITE_SECRET`, ±300 s window, `Idempotency-Key` replay, `asset://` images → Supabase Storage,
+  untrusted Markdown rendered without raw HTML). Pages: `/articles`, `/articles/[slug]`, `/articles/category/[c]`,
+  `/reviews`, `/reviews/[slug]`, plus `/rss.xml`, `/llms.txt`, sitemap and JSON-LD (Article/Review, FAQPage, BreadcrumbList).
+- **Health** `GET /api/health` (checks Supabase).
+- **Migration** `prisma/migrations/20261013000000_autopost_articles/migration.sql` — run in the Supabase SQL editor
+  only after approval.
+
+### Tests
+
+```bash
+npm test
+```
+
+```bash
+PROMOTIONS_TEST_MODE=1 AUTOPOST_SITE_SECRET=<test> CRON_SECRET=<test> PORT=3125 npx next start
+```
+
+```bash
+BASE_URL=http://localhost:3125 AUTOPOST_SITE_SECRET=<test> CRON_SECRET=<test> npm run test:e2e
+```
+
+```bash
+BASE_URL=http://localhost:3125 AUTOPOST_SITE_SECRET=<test> ../AI-Automation-Farm/.venv/bin/python scripts/verify_farm_publisher.py
+```
+
+`PROMOTIONS_TEST_MODE=1` swaps Gemini for a fixture and Supabase for an in-memory store (refused on Vercel production).
+
 ## Development
 
 ```bash

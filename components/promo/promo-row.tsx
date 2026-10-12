@@ -45,7 +45,7 @@ export function PromoRow({ promo }: { promo: Promotion }) {
   );
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-2.5">
+    <div id={`promo-${promo.id}`} className="flex scroll-mt-36 items-center gap-2 rounded-xl border border-border bg-surface p-2.5">
       {href ? (
         <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="flex min-w-0 flex-1 items-center gap-3">
           {content}

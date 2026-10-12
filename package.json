@@ -10,7 +10,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/20260330000000_init/migration.sql",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "test": "node --test \"lib/**/*.test.ts\"",
+    "test:e2e": "node --test scripts/autopost-e2e.test.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -20,6 +22,8 @@
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

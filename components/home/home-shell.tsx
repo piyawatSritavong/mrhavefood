@@ -4,10 +4,20 @@ import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 
+import Link from "next/link";
+
 import { HeaderCta } from "@/components/home/header-cta";
 import { cn } from "@/lib/utils";
 import { navItems, type SectionId } from "@/lib/home-content";
 import { useHomeStore } from "@/lib/stores/use-home-store";
+
+const PAGE_LINKS = [
+  { label: "บทความ", href: "/articles" },
+  { label: "รีวิว", href: "/reviews" },
+] as const;
+
+const PAGE_LINK_CLASS =
+  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold text-ink-secondary transition-colors duration-300 hover:bg-surface-brand hover:text-brand-primary";
 
 type HomeShellProps = {
   children: ReactNode;
@@ -160,6 +170,11 @@ export function HomeShell({
                     </a>
                   </li>
                 ))}
+                {PAGE_LINKS.map((l) => (
+                  <li key={l.href}>
+                    <Link href={l.href} className={PAGE_LINK_CLASS}>{l.label}</Link>
+                  </li>
+                ))}
               </ol>
             </nav>
 
@@ -179,6 +194,11 @@ export function HomeShell({
                   >
                     {item.label}
                   </a>
+                </li>
+              ))}
+              {PAGE_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className={PAGE_LINK_CLASS}>{l.label}</Link>
                 </li>
               ))}
             </ol>

@@ -108,6 +108,7 @@ function fixtureCandidates(today: string): unknown {
   const year = today.slice(0, 4);
   return [
     { platform: "GrabFood", campaign_name: "ส่งฟรีเมื่อสั่งครบ 200", promo_code: "FREEDEL200", conditions: "สั่งขั้นต่ำ 200 บาท เฉพาะร้านที่ร่วมรายการ", start_date: today, end_date: `${year}-12-31`, reference_url: "https://www.grab.com/th/food/promo/" },
+    { platform: "GrabFood", campaign_name: "ลด 50 บาท สั่งครบ 300", promo_code: "GRAB50", conditions: "สั่งขั้นต่ำ 300 บาท วันจันทร์–ศุกร์", start_date: null, end_date: `${year}-12-31`, reference_url: "https://www.grab.com/th/food/promo/" },
     { platform: "LINE MAN", campaign_name: "ลด 40 บาท ลูกค้าใหม่", promo_code: "NEW40", conditions: "เฉพาะผู้ใช้ใหม่ สั่งขั้นต่ำ 150 บาท", start_date: null, end_date: `${year}-12-31`, reference_url: "https://lineman.line.me/promotion" },
     { platform: "ShopeeFood", campaign_name: "โค้ดลด 25% มื้อกลางวัน", promo_code: "LUNCH25", conditions: "11:00–14:00 ลดสูงสุด 50 บาท", start_date: null, end_date: null, reference_url: "https://shopee.co.th/m/shopeefood" },
     { platform: "Robinhood", campaign_name: "ดีลดีร้านดัง", promo_code: null, conditions: "ราคาพิเศษเฉพาะร้านที่ร่วมรายการ", start_date: null, end_date: `${year}-11-30`, reference_url: "https://www.robinhood.in.th/" },
