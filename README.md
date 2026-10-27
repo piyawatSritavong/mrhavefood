@@ -79,6 +79,24 @@ BASE_URL=http://localhost:3125 AUTOPOST_SITE_SECRET=<test> ../AI-Automation-Farm
 
 ## Development
 
+### Site-owned publishing schedule
+
+`data/scheduled-articles.json` contains the owned editorial queue. Article times use
+explicit UTC offsets. Public pages, article lists, category lists, RSS, sitemap,
+and llms.txt filter out entries until `published_at` is due. These routes render
+per request, so a previously cached page cannot reveal future content or delay
+the scheduled release by an ISR window. No model call, browser worker, database
+write, or incoming publishing credential is needed at publication time.
+
+The read-only `/api/publishing/health` identifies this mode. The separately signed
+SPP receiver remains closed unless `AUTOPOST_SITE_SECRET` is configured. Enabling
+that optional receiver is not required for the site-owned schedule. Repository
+articles remain available when the optional `articles` database table is absent.
+
+Times in this queue are release times. A release becomes visible on the first
+request at or after that instant. Actual platform verification belongs in the
+posting checklist and must not be inferred merely from a queued record.
+
 ```bash
 npm install
 npm run dev

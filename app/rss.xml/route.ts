@@ -2,7 +2,8 @@ import { articlePath, escapeXml, indexable } from "@/lib/autopost/feeds";
 import { listPublishedArticles } from "@/lib/autopost/queries";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   const articles = (await listPublishedArticles({ limit: 50 })).filter(indexable);

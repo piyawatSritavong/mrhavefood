@@ -5,7 +5,8 @@ import { ArticleList } from "@/components/articles/article-list";
 import { ContentShell } from "@/components/site/site-header";
 import { listPublishedArticles, REVIEW_TYPES } from "@/lib/autopost/queries";
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "รีวิวและเปรียบเทียบแอปส่งอาหาร",

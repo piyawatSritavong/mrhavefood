@@ -8,7 +8,8 @@ import { SITE_URL } from "@/lib/site";
 import type { Promotion } from "@/lib/supabase";
 
 // Rebuilt from the promotions table; robots.txt points crawlers here.
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let active: Promotion[] = [];

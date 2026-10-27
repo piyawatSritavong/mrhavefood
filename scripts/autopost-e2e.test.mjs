@@ -98,6 +98,20 @@ test("second upsert of the same external_id updates in place", async () => {
   assert.ok((await page(`/articles/e2e-${run}-grab-promo`)).html.includes("อัปเดตแล้ว"));
 });
 
+test('future articles are hidden from their public page and every discovery surface', async () => {
+  const slug = `e2e-${run}-future`;
+  const title = `Future publication ${run}`;
+  const r = await post(article({ external_id: `e2e:${run}:future`, slug, title, published_at: '2099-01-01T00:00:00+07:00' }));
+  assert.equal(r.status, 201);
+  assert.equal((await page(`/articles/${slug}`)).status, 404);
+  for (const path of ['/articles', '/articles/category/promotions', '/rss.xml', '/sitemap.xml', '/llms.txt']) {
+    const result = await page(path);
+    assert.equal(result.status, 200);
+    assert.ok(!result.html.includes(slug), `${path} leaked the future slug`);
+    assert.ok(!result.html.includes(title), `${path} leaked the future title`);
+  }
+});
+
 test("slug owned by another external_id is 409", async () => {
   const r = await post(article({ external_id: `e2e:${run}:other` }));
   assert.equal(r.status, 409);

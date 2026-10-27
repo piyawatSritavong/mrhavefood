@@ -9,7 +9,8 @@ import { ARTICLE_LIST_TYPES, listPublishedArticles } from "@/lib/autopost/querie
 import { platformMeta } from "@/lib/promotions-data";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "บทความโปรส่งอาหาร เคล็ดลับประหยัดค่าส่ง",
@@ -33,7 +34,7 @@ export default async function ArticlesHub() {
       <div className="mx-auto max-w-5xl space-y-5">
         <header className="space-y-1">
           <h1 className="text-2xl text-brand-primary sm:text-3xl">บทความโปรส่งอาหาร</h1>
-          <p className="text-sm text-ink-muted">คู่มือใช้โค้ด สรุปโปรรายสัปดาห์ และเคล็ดลับประหยัด อ้างอิงจากหน้าโปรทางการทุกชิ้น</p>
+          <p className="text-sm text-ink-muted">คู่มือคิดยอดสุทธิ ใช้โค้ด และวางงบสั่งอาหาร ตรวจราคาและสิทธิของบัญชีในแอปก่อนสั่งทุกครั้ง</p>
         </header>
         <CategoryLinks articles={articles} />
         <ArticleList articles={articles} empty="ยังไม่มีบทความ — บทความแรกกำลังมา" />

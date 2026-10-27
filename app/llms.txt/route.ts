@@ -3,7 +3,8 @@ import { listPublishedArticles } from "@/lib/autopost/queries";
 import { platformMeta } from "@/lib/promotions-data";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // llms.txt (https://llmstxt.org): a plain map of the site for AI answer engines.
 export async function GET() {
